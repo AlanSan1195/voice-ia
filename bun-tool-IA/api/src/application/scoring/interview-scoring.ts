@@ -1,41 +1,68 @@
 import { z } from "zod";
-import type { EnglishLevel, FeedbackItem, InterviewFeedback, InterviewTurn, InterviewTurnEvaluation } from "../../domain/interview";
+import type {
+  EnglishLevel,
+  FeedbackItem,
+  InterviewFeedback,
+  InterviewTurn,
+  InterviewTurnEvaluation,
+} from "../../domain/interview";
 
 const score = z.number().min(1).max(10);
-const feedbackItemSchema = z.object({ label: z.string().min(1), description: z.string().min(1) }).strict();
+const feedbackItemSchema = z
+  .object({ label: z.string().min(1), description: z.string().min(1) })
+  .strict();
 
-export const turnAssessmentSchema = z.object({
-  englishScore: score,
-  professionalEnglishScore: score,
-  technicalScore: score,
-  relevanceScore: score,
-  structureScore: score,
-  clarityScore: score,
-  observedEnglishLevel: z.enum(["A1", "A2", "B1", "B2"]),
-  feedback: z.string().min(1),
-  strengths: z.array(z.string().min(1)).min(1).max(2),
-  priorityImprovement: z.string().min(1),
-  correctedAnswer: z.string().min(1),
-  nextLevelAnswer: z.string().min(1),
-}).strict();
+export const turnAssessmentSchema = z
+  .object({
+    englishScore: score,
+    professionalEnglishScore: score,
+    technicalScore: score,
+    relevanceScore: score,
+    structureScore: score,
+    clarityScore: score,
+    observedEnglishLevel: z.enum(["A1", "A2", "B1", "B2"]),
+    feedback: z.string().min(1),
+    strengths: z.array(z.string().min(1)).min(1).max(2),
+    priorityImprovement: z.string().min(1),
+    correctedAnswer: z.string().min(1),
+    nextLevelAnswer: z.string().min(1),
+  })
+  .strict();
 
-export const feedbackNarrativeSchema = z.object({
-  summary: z.string().min(1),
-  strengths: z.array(feedbackItemSchema).min(1),
-  gaps: z.array(feedbackItemSchema).min(1),
-  recommendations: z.array(feedbackItemSchema).min(1),
-}).strict();
+export const feedbackNarrativeSchema = z
+  .object({
+    summary: z.string().min(1),
+    strengths: z.array(feedbackItemSchema).min(1),
+    gaps: z.array(feedbackItemSchema).min(1),
+    recommendations: z.array(feedbackItemSchema).min(1),
+  })
+  .strict();
 
 export type TurnAssessment = z.infer<typeof turnAssessmentSchema>;
 export type FeedbackNarrative = z.infer<typeof feedbackNarrativeSchema>;
 
 const round1 = (value: number) => Math.round(value * 10) / 10;
-const average = (values: number[]) => round1(values.reduce((sum, value) => sum + value, 0) / values.length);
+const average = (values: number[]) =>
+  round1(values.reduce((sum, value) => sum + value, 0) / values.length);
 
-export function calculateTurnEvaluation(assessment: TurnAssessment): InterviewTurnEvaluation {
+export function calculateTurnEvaluation(
+  assessment: TurnAssessment,
+): InterviewTurnEvaluation {
   return {
-    levelScore: round1(assessment.englishScore * .30 + assessment.technicalScore * .25 + assessment.relevanceScore * .20 + assessment.structureScore * .15 + assessment.clarityScore * .10),
-    jobReadinessScore: round1(assessment.technicalScore * .35 + assessment.relevanceScore * .25 + assessment.professionalEnglishScore * .20 + assessment.structureScore * .10 + assessment.clarityScore * .10),
+    levelScore: round1(
+      assessment.englishScore * 0.3 +
+        assessment.technicalScore * 0.25 +
+        assessment.relevanceScore * 0.2 +
+        assessment.structureScore * 0.15 +
+        assessment.clarityScore * 0.1,
+    ),
+    jobReadinessScore: round1(
+      assessment.technicalScore * 0.35 +
+        assessment.relevanceScore * 0.25 +
+        assessment.professionalEnglishScore * 0.2 +
+        assessment.structureScore * 0.1 +
+        assessment.clarityScore * 0.1,
+    ),
     englishScore: assessment.englishScore,
     technicalScore: assessment.technicalScore,
     relevanceScore: assessment.relevanceScore,
@@ -51,19 +78,31 @@ export function calculateTurnEvaluation(assessment: TurnAssessment): InterviewTu
 
 function observedLevel(evaluations: InterviewTurnEvaluation[]): EnglishLevel {
   const order: EnglishLevel[] = ["A1", "A2", "B1", "B2"];
-  const sorted = evaluations.map((item) => order.indexOf(item.observedEnglishLevel)).sort((a, b) => a - b);
+  const sorted = evaluations
+    .map((item) => order.indexOf(item.observedEnglishLevel))
+    .sort((a, b) => a - b);
   const medianIndex = sorted[Math.floor(sorted.length / 2)] ?? 2;
   return order[medianIndex] ?? "B1";
 }
 
-export function buildInterviewFeedback(turns: InterviewTurn[], narrative: FeedbackNarrative): InterviewFeedback {
-  const evaluations = turns.map((turn) => turn.evaluation).filter((item): item is InterviewTurnEvaluation => Boolean(item));
-  if (!evaluations.length || evaluations.length !== turns.length) throw new Error("Todas las respuestas deben estar evaluadas antes de generar el resultado final.");
+export function buildInterviewFeedback(
+  turns: InterviewTurn[],
+  narrative: FeedbackNarrative,
+): InterviewFeedback {
+  const evaluations = turns
+    .map((turn) => turn.evaluation)
+    .filter((item): item is InterviewTurnEvaluation => Boolean(item));
+  if (!evaluations.length || evaluations.length !== turns.length)
+    throw new Error(
+      "Todas las respuestas deben estar evaluadas antes de generar el resultado final.",
+    );
   const levelScore = average(evaluations.map((item) => item.levelScore));
   return {
     overallScore: Math.round(levelScore * 10),
     levelScore,
-    jobReadinessScore: average(evaluations.map((item) => item.jobReadinessScore)),
+    jobReadinessScore: average(
+      evaluations.map((item) => item.jobReadinessScore),
+    ),
     englishLevel: observedLevel(evaluations),
     dimensionAverages: {
       english: average(evaluations.map((item) => item.englishScore)),
@@ -75,6 +114,12 @@ export function buildInterviewFeedback(turns: InterviewTurn[], narrative: Feedba
     strengths: narrative.strengths as FeedbackItem[],
     gaps: narrative.gaps as FeedbackItem[],
     recommendations: narrative.recommendations as FeedbackItem[],
-    turnReviews: evaluations.map((item, turnIndex) => ({ turnIndex, levelScore: item.levelScore, jobReadinessScore: item.jobReadinessScore, feedback: item.feedback, correctedAnswer: item.correctedAnswer })),
+    turnReviews: evaluations.map((item, turnIndex) => ({
+      turnIndex,
+      levelScore: item.levelScore,
+      jobReadinessScore: item.jobReadinessScore,
+      feedback: item.feedback,
+      correctedAnswer: item.correctedAnswer,
+    })),
   };
 }

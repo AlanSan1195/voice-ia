@@ -1,1 +1,3 @@
-export interface TranscriptionPort { transcribe(file: File): Promise<{ text: string; provider: "groq" }>; }
+export interface TranscriptionPort {
+  transcribe(file: File): Promise<{ text: string; provider: "groq" }>;
+}
