@@ -10,10 +10,10 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@voice-ia/contracts": "workspace:*",
     "@cerebras/cerebras_cloud_sdk": "^1.59.0",
     "groq-sdk": "^0.37.0",
-    "pdfjs-dist": "^5.7.284",
-    "pdfreader": "^3.0.8",
+    "pdfjs-dist": "^6.2.108",
     "zod": "^4.3.6"
   },
   "devDependencies": {

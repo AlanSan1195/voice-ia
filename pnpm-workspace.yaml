@@ -1,6 +1,10 @@
 packages:
+  - "packages/contracts"
   - "bun-tool-IA/api"
   - "apps/web"
+overrides:
+  js-yaml: ^4.3.2
+  svgo: ^4.1.0
 allowBuilds:
   bun: true
   esbuild: true

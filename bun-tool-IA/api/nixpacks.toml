@@ -1,11 +1,11 @@
 [phases.setup]
-nixPkgs = ["bun"]
+nixPkgs = ["bun", "nodejs_24", "pnpm"]
 
 [phases.install]
-cmds = ["bun install"]
+cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = []
 
 [start]
-cmd = "bun run start"
+cmd = "pnpm --filter @voice-ia/api start"

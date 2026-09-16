@@ -2,15 +2,22 @@
   "name": "voice-ia-interview",
   "private": true,
   "packageManager": "pnpm@11.9.0",
-  "engines": { "bun": "1.3.14", "node": ">=24" },
+  "engines": {
+    "bun": "1.3.14",
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors cyan,magenta \"pnpm --filter @voice-ia/api dev\" \"pnpm --filter @voice-ia/web dev\"",
     "build": "pnpm --filter @voice-ia/web build",
     "typecheck": "pnpm --filter @voice-ia/api typecheck && pnpm --filter @voice-ia/web typecheck",
-    "test": "pnpm --filter @voice-ia/api test"
+    "test": "pnpm --filter @voice-ia/api test",
+    "lint": "pnpm --filter @voice-ia/api exec tsc --noEmit && pnpm --filter @voice-ia/web exec tsc --noEmit",
+    "format:check": "pnpm exec prettier --check .",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "bun": "1.3.14",
-    "concurrently": "9.2.1"
+    "concurrently": "9.2.1",
+    "prettier": "^3.6.2"
   }
 }

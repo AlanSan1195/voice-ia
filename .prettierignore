@@ -1,0 +1,6 @@
+.agents/
+.codex/
+node_modules/
+dist/
+*.lock
+pnpm-lock.yaml
