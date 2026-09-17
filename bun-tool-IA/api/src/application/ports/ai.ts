@@ -40,8 +40,11 @@ export type AiResult = {
 };
 export interface AiProvider {
   readonly name: ProviderName;
-  generate(payload: AiPayload): Promise<AiResult["value"]>;
+  generate(
+    payload: AiPayload,
+    signal?: AbortSignal,
+  ): Promise<AiResult["value"]>;
 }
 export interface AiGateway {
-  generate(payload: AiPayload): Promise<AiResult>;
+  generate(payload: AiPayload, signal?: AbortSignal): Promise<AiResult>;
 }

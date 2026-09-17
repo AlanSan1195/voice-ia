@@ -1,4 +1,25 @@
 type SpeechProvider = "elevenlabs" | "groq";
+const TTS_TIMEOUT_MS = Number(process.env.TTS_TIMEOUT_MS || 20_000);
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  parentSignal?: AbortSignal,
+) {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(parentSignal?.reason);
+  parentSignal?.addEventListener("abort", onAbort, { once: true });
+  const timer = setTimeout(
+    () => controller.abort(new Error("TTS timeout")),
+    TTS_TIMEOUT_MS,
+  );
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+    parentSignal?.removeEventListener("abort", onAbort);
+  }
+}
 
 const corsHeaders = (provider: SpeechProvider, contentType: string) => ({
   "Content-Type": contentType,
@@ -34,12 +55,15 @@ function groqPerformance(text: string) {
   return `[professionally] ${normalizeQuestion(text)}`;
 }
 
-async function elevenLabsSpeech(text: string): Promise<Response> {
+async function elevenLabsSpeech(
+  text: string,
+  signal?: AbortSignal,
+): Promise<Response> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ElevenLabs no está configurado.");
   const voiceId = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb";
   const model = process.env.ELEVENLABS_TTS_MODEL || "eleven_v3";
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream?output_format=mp3_44100_128`,
     {
       method: "POST",
@@ -57,6 +81,7 @@ async function elevenLabsSpeech(text: string): Promise<Response> {
         },
       }),
     },
+    signal,
   );
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as {
@@ -78,22 +103,29 @@ async function elevenLabsSpeech(text: string): Promise<Response> {
   });
 }
 
-async function groqSpeech(text: string): Promise<Response> {
+async function groqSpeech(
+  text: string,
+  signal?: AbortSignal,
+): Promise<Response> {
   if (!process.env.GROQ_API_KEY) throw new Error("Groq no está configurado.");
-  const input = groqPerformance(text).slice(0, 200);
-  const response = await fetch("https://api.groq.com/openai/v1/audio/speech", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      "Content-Type": "application/json",
+  const input = groqPerformance(text);
+  const response = await fetchWithTimeout(
+    "https://api.groq.com/openai/v1/audio/speech",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.GROQ_TTS_MODEL || "canopylabs/orpheus-v1-english",
+        voice: process.env.GROQ_TTS_VOICE || "autumn",
+        input,
+        response_format: "wav",
+      }),
     },
-    body: JSON.stringify({
-      model: process.env.GROQ_TTS_MODEL || "canopylabs/orpheus-v1-english",
-      voice: process.env.GROQ_TTS_VOICE || "autumn",
-      input,
-      response_format: "wav",
-    }),
-  });
+    signal,
+  );
   if (!response.ok) {
     const payload = (await response.json().catch(() => ({}))) as {
       error?: { message?: string };
@@ -106,7 +138,10 @@ async function groqSpeech(text: string): Promise<Response> {
   });
 }
 
-export async function generateSpeech(text: string): Promise<Response> {
+export async function generateSpeech(
+  text: string,
+  signal?: AbortSignal,
+): Promise<Response> {
   const clean = normalizeQuestion(text);
   if (!clean)
     throw Object.assign(new Error("El texto para voz está vacío."), {
@@ -116,7 +151,7 @@ export async function generateSpeech(text: string): Promise<Response> {
   const errors: string[] = [];
   if (process.env.ELEVENLABS_API_KEY) {
     try {
-      return await elevenLabsSpeech(clean);
+      return await elevenLabsSpeech(clean, signal);
     } catch (error) {
       const message = error instanceof Error ? error.message : "error";
       console.warn(`[tts] ElevenLabs failed: ${message}`);
@@ -124,7 +159,7 @@ export async function generateSpeech(text: string): Promise<Response> {
     }
   }
   try {
-    return await groqSpeech(clean);
+    return await groqSpeech(clean, signal);
   } catch (error) {
     const message = error instanceof Error ? error.message : "error";
     console.warn(`[tts] Groq failed: ${message}`);

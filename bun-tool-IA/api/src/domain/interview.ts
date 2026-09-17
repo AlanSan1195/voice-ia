@@ -1,4 +1,4 @@
-export const TOTAL_QUESTIONS = 3;
+export { TOTAL_QUESTIONS } from "@voice-ia/contracts";
 
 export type ProviderName = "groq" | "cerebras";
 export type EnglishLevel = "A1" | "A2" | "B1" | "B2";

@@ -49,6 +49,22 @@ describe("interview scoring", () => {
     expect(() => turnAssessmentSchema.parse(missing)).toThrow();
   });
 
+  test("accepts extra strengths and keeps the two most relevant", () => {
+    const parsed = turnAssessmentSchema.parse({
+      ...assessment,
+      strengths: [
+        "Explica una decisión concreta.",
+        "Describe el manejo de errores.",
+        "Menciona cómo mantuvo la interfaz sincronizada.",
+      ],
+    });
+
+    expect(calculateTurnEvaluation(parsed).strengths).toEqual([
+      "Explica una decisión concreta.",
+      "Describe el manejo de errores.",
+    ]);
+  });
+
   test("uses saved turn evaluations for final averages", () => {
     const first = calculateTurnEvaluation(assessment);
     const second = calculateTurnEvaluation({

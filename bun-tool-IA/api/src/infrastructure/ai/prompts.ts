@@ -32,7 +32,7 @@ export function promptFor(payload: AiPayload): string {
   if (payload.kind === "next")
     return [
       ...base,
-      `This is question ${payload.turns.length + 1} of ${payload.questionCount}. Return exactly {question:{index,text}}.`,
+      `This is question ${payload.turns.length + 1} of ${payload.questionCount}. Return exactly {question:{index,text}}. Use a zero-based index: 0, 1, or 2.`,
       "Do not repeat previous questions. Choose the single most useful follow-up based on the candidate's latest answer. Probe only one dimension: technical depth, trade-offs, ownership, or communication.",
       `Profile:\n${JSON.stringify(payload.context.profile)}`,
       `Previous turns:\n${payload.turns.map((turn, i) => `${i + 1}. Q: ${turn.question}\nA: ${turn.answer}`).join("\n")}`,
@@ -45,7 +45,7 @@ export function promptFor(payload: AiPayload): string {
       "englishScore is relative to the selected CEFR level. A1: reward understandable basic meaning despite grammar errors. A2: expect simple connected workplace sentences. B1: expect a clear explanation with reasons or an example. B2: expect precise professional English with relevant detail.",
       "professionalEnglishScore is absolute against a B2 professional interview benchmark. technicalScore and relevanceScore are absolute for the target role and must never be softened because of English level. structureScore measures organization. clarityScore measures whether the intended meaning is understandable.",
       "observedEnglishLevel is the level demonstrated in this answer and must not change the selected level. correctedAnswer must preserve the candidate's ideas and correct only their English. nextLevelAnswer must be an achievable improved answer approximately one CEFR step above, not an artificial native-level rewrite.",
-      "Return exactly: {englishScore,professionalEnglishScore,technicalScore,relevanceScore,structureScore,clarityScore,observedEnglishLevel,feedback,strengths:string[],priorityImprovement,correctedAnswer,nextLevelAnswer}. All six scores must be numbers from 1 to 10. Feedback and coaching text must be in Spanish; correctedAnswer and nextLevelAnswer must be in English.",
+      "Return exactly: {englishScore,professionalEnglishScore,technicalScore,relevanceScore,structureScore,clarityScore,observedEnglishLevel,feedback,strengths:string[],priorityImprovement,correctedAnswer,nextLevelAnswer}. strengths must contain 1 or 2 concise items. All six scores must be numbers from 1 to 10. Feedback and coaching text must be in Spanish; correctedAnswer and nextLevelAnswer must be in English.",
       `Question ${payload.turnIndex + 1}:\n${payload.question}`,
       `Candidate answer:\n${payload.answer}`,
       `Profile:\n${JSON.stringify(payload.context.profile)}`,

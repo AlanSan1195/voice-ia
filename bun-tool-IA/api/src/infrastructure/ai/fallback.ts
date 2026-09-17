@@ -16,22 +16,36 @@ export class ProviderFallbackGateway implements AiGateway {
         (provider): provider is AiProvider => Boolean(provider),
       );
   }
-  async generate(payload: AiPayload) {
+  async generate(payload: AiPayload, signal?: AbortSignal) {
     const attempts: string[] = [];
     for (const provider of this.providers) {
       if (!provider) continue;
       try {
-        const timeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), this.timeoutMs),
+        const controller = new AbortController();
+        const onAbort = () => controller.abort(signal?.reason);
+        signal?.addEventListener("abort", onAbort, { once: true });
+        const timeoutId = setTimeout(
+          () => controller.abort(new Error("timeout")),
+          this.timeoutMs,
         );
-        return {
-          provider: provider.name as ProviderName,
-          value: await Promise.race([provider.generate(payload), timeout]),
-        };
+        try {
+          return {
+            provider: provider.name as ProviderName,
+            value: await provider.generate(payload, controller.signal),
+          };
+        } finally {
+          clearTimeout(timeoutId);
+          signal?.removeEventListener("abort", onAbort);
+        }
       } catch (error) {
         attempts.push(
           `${provider.name}: ${error instanceof Error ? error.message : "unknown error"}`,
         );
+        if (signal?.aborted)
+          throw Object.assign(new Error("La solicitud fue cancelada."), {
+            code: "REQUEST_ABORTED",
+            retryable: true,
+          });
       }
     }
     const reason = attempts.length

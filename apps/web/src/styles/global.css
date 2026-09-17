@@ -58,6 +58,8 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   gap: 24px;
   margin-bottom: 72px;
 }
@@ -249,7 +251,22 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(198, 242, 107, 0.08);
 }
 .file-drop input {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+.file-drop:focus-within {
+  border-color: rgba(198, 242, 107, 0.65);
+  box-shadow: 0 0 0 3px rgba(198, 242, 107, 0.08);
+}
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+.file-drop:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 .file-drop strong {
   display: block;
@@ -435,6 +452,126 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+.progress-panel {
+  margin-bottom: 20px;
+}
+.progress-intro {
+  max-width: 48ch;
+  margin: 10px 0 0;
+  line-height: 1.5;
+  font-size: 0.8rem;
+}
+.progress-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.progress-filters label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.progress-filters select {
+  min-width: 132px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 28px 9px 10px;
+  color: var(--ink);
+  background: var(--panel-hi);
+  font: inherit;
+  font-size: 0.75rem;
+}
+.progress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 24px;
+}
+.progress-stat {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.progress-stat span,
+.progress-stat small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.progress-stat strong {
+  font-size: 1.4rem;
+  letter-spacing: -0.04em;
+}
+.progress-stat strong small,
+.dimension-row strong small {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  letter-spacing: 0;
+}
+.progress-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 26px;
+}
+.progress-grid h3 {
+  margin: 0 0 15px;
+  font-size: 0.84rem;
+}
+.dimension-row {
+  display: grid;
+  gap: 8px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.dimension-row > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.dimension-row strong {
+  color: var(--ink);
+}
+.dimension-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.dimension-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+.progress-session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.progress-session strong,
+.progress-session small {
+  display: block;
+}
+.progress-session strong {
+  font-size: 0.78rem;
+}
+.progress-session small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.68rem;
 }
 .chip {
   padding: 7px 9px;
@@ -706,6 +843,9 @@ textarea:focus {
   .hero h1 {
     font-size: 3.4rem;
   }
+  .level-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .panel {
     padding: 20px;
     border-radius: 22px;
@@ -714,6 +854,17 @@ textarea:focus {
   .feedback-grid {
     display: flex;
     flex-direction: column;
+  }
+  .progress-summary,
+  .progress-grid {
+    grid-template-columns: 1fr;
+  }
+  .progress-filters {
+    width: 100%;
+  }
+  .progress-filters label,
+  .progress-filters select {
+    width: 100%;
   }
   .question-card {
     padding: 24px 0;

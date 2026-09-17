@@ -1,3 +1,6 @@
 export interface TranscriptionPort {
-  transcribe(file: File): Promise<{ text: string; provider: "groq" }>;
+  transcribe(
+    file: File,
+    signal?: AbortSignal,
+  ): Promise<{ text: string; provider: "groq" }>;
 }

@@ -2,8 +2,10 @@ import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { DocumentTextPort } from "../../application/ports/document";
 
 const MAX = Number(process.env.MAX_SOURCE_LENGTH || 18000);
+const MAX_PAGES = Number(process.env.MAX_PDF_PAGES || 50);
+const PAGE_TIMEOUT_MS = Number(process.env.PDF_PAGE_TIMEOUT_MS || 10_000);
 export const pdfDocumentAdapter: DocumentTextPort = {
-  async extract(file) {
+  async extract(file, signal?: AbortSignal) {
     if (file.type !== "application/pdf")
       throw Object.assign(new Error("Solo se aceptan PDFs en esta versión."), {
         code: "UNSUPPORTED_FILE",
@@ -15,36 +17,53 @@ export const pdfDocumentAdapter: DocumentTextPort = {
         retryable: false,
       });
     const data = new Uint8Array(await file.arrayBuffer());
-    let document: any;
+    let loadingTask: ReturnType<typeof getDocument> | undefined;
     try {
-      const loadingTask = getDocument({
+      loadingTask = getDocument({
         data,
         disableWorker: true,
         useWorkerFetch: false,
         isEvalSupported: false,
       } as any);
-      document = await loadingTask.promise;
+      const document = await loadingTask.promise;
       const pages: string[] = [];
       for (
         let pageNumber = 1;
-        pageNumber <= document.numPages;
+        pageNumber <= Math.min(document.numPages, MAX_PAGES);
         pageNumber += 1
       ) {
+        if (signal?.aborted)
+          throw Object.assign(new Error("La solicitud fue cancelada."), {
+            code: "REQUEST_ABORTED",
+            retryable: true,
+          });
         const page = await document.getPage(pageNumber);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item: unknown) =>
-            item &&
-            typeof item === "object" &&
-            "str" in item &&
-            typeof item.str === "string"
-              ? item.str
-              : "",
-          )
-          .filter(Boolean)
-          .join(" ");
-        if (pageText) pages.push(pageText);
-        page.cleanup();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          const timeout = new Promise<never>((_, reject) => {
+            timer = setTimeout(
+              () => reject(new Error("page timeout")),
+              PAGE_TIMEOUT_MS,
+            );
+          });
+          const content = await Promise.race([page.getTextContent(), timeout]);
+          const pageText = content.items
+            .map((item: unknown) =>
+              item &&
+              typeof item === "object" &&
+              "str" in item &&
+              typeof item.str === "string"
+                ? item.str
+                : "",
+            )
+            .filter(Boolean)
+            .join(" ");
+          if (pageText) pages.push(pageText);
+        } finally {
+          if (timer) clearTimeout(timer);
+          page.cleanup();
+        }
+        if (pages.join(" ").length >= MAX) break;
       }
       const text = pages.join(" ").replace(/\s+/g, " ").trim();
       if (text.length < 80)
@@ -69,7 +88,7 @@ export const pdfDocumentAdapter: DocumentTextPort = {
         { code: "PDF_PARSE_FAILED", retryable: false, cause: error },
       );
     } finally {
-      await document?.destroy();
+      await loadingTask?.destroy();
     }
   },
 };

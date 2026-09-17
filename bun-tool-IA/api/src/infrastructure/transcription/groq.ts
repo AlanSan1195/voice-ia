@@ -1,7 +1,31 @@
 import type { TranscriptionPort } from "../../application/ports/transcription";
 
+const TRANSCRIPTION_TIMEOUT_MS = Number(
+  process.env.TRANSCRIPTION_TIMEOUT_MS || 60_000,
+);
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  parentSignal?: AbortSignal,
+) {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(parentSignal?.reason);
+  parentSignal?.addEventListener("abort", onAbort, { once: true });
+  const timer = setTimeout(
+    () => controller.abort(new Error("transcription timeout")),
+    TRANSCRIPTION_TIMEOUT_MS,
+  );
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+    parentSignal?.removeEventListener("abort", onAbort);
+  }
+}
+
 export const groqTranscriptionAdapter: TranscriptionPort = {
-  async transcribe(file) {
+  async transcribe(file, signal?: AbortSignal) {
     if (!process.env.GROQ_API_KEY)
       throw Object.assign(
         new Error("GROQ_API_KEY es necesaria para transcribir audio."),
@@ -21,13 +45,14 @@ export const groqTranscriptionAdapter: TranscriptionPort = {
     );
     form.append("language", "en");
     form.append("response_format", "json");
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       "https://api.groq.com/openai/v1/audio/transcriptions",
       {
         method: "POST",
         headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
         body: form,
       },
+      signal,
     );
     const payload = (await response.json().catch(() => ({}))) as {
       text?: unknown;
