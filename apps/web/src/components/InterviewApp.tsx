@@ -1,83 +1,31 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
+import { AccessScreen } from "./AccessScreen";
 import {
-  FileText,
-  History,
-  Mic,
-  Pause,
-  RotateCcw,
-  Sparkles,
-  Volume2,
-  VolumeX,
-  Waves,
-} from "lucide-react";
-
-type Stage = "prepare" | "interview" | "results";
-type Provider = "groq" | "cerebras";
-type EnglishLevel = "A1" | "A2" | "B1" | "B2";
-type TtsProvider = "loading" | "streaming" | "system" | "off";
-type TurnEvaluation = {
-  levelScore: number;
-  jobReadinessScore: number;
-  englishScore: number;
-  technicalScore: number;
-  relevanceScore: number;
-  structureScore: number;
-  observedEnglishLevel: EnglishLevel;
-  feedback: string;
-  strengths: string[];
-  priorityImprovement: string;
-  correctedAnswer: string;
-  nextLevelAnswer: string;
-};
-type Turn = {
-  question: string;
-  answer: string;
-  transcript?: string;
-  evaluation?: TurnEvaluation;
-};
-type Profile = { role: string; summary: string; focusAreas: string[] };
-type Feedback = {
-  overallScore: number;
-  levelScore: number;
-  jobReadinessScore: number;
-  englishLevel: EnglishLevel;
-  dimensionAverages: {
-    english: number;
-    technical: number;
-    relevance: number;
-    structure: number;
-  };
-  summary: string;
-  strengths: { label: string; description: string }[];
-  gaps: { label: string; description: string }[];
-  recommendations: { label: string; description: string }[];
-  turnReviews: {
-    turnIndex: number;
-    levelScore: number;
-    jobReadinessScore: number;
-    feedback: string;
-    correctedAnswer: string;
-  }[];
-};
-type Session = {
-  id: string;
-  createdAt: string;
-  profile: Profile;
-  turns: Turn[];
-  englishLevel?: EnglishLevel;
-  feedback?: Feedback;
-};
-type StartResponse = {
-  profile: Profile;
-  question: { index: number; text: string };
-  totalQuestions: number;
-  provider: Provider;
-};
+  type EnglishLevel,
+  type Feedback,
+  type ProgressDimension,
+  type ProgressFilterLevel,
+  type Profile,
+  type Provider,
+  type Session,
+  type Stage,
+  type StartResponse,
+  type TtsProvider,
+  type Turn,
+  type TurnEvaluation,
+} from "./InterviewApp.types";
+import { InterviewHeader } from "./InterviewHeader";
+import { InterviewStage } from "./InterviewStage";
+import { PrepareStage } from "./PrepareStage";
+import { ProgressOverview } from "./ProgressOverview";
+import { ResultsStage } from "./ResultsStage";
+import { SessionHistory } from "./SessionHistory";
 
 const API = import.meta.env.PUBLIC_API_URL || "http://localhost:3001";
 const HISTORY_KEY = "vera-interview-history-v2";
 const LEGACY_HISTORY_KEY = "vera-interview-history-v1";
+
 async function api<T>(
   path: string,
   options: RequestInit = {},
@@ -117,6 +65,7 @@ function normalizeScore(value: unknown, fallback = 5) {
   if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
   return Math.max(1, Math.min(10, value > 10 ? value / 10 : value));
 }
+
 function migrateEvaluation(
   value: any,
   level: EnglishLevel,
@@ -142,6 +91,7 @@ function migrateEvaluation(
     nextLevelAnswer: value.correctedAnswer || "No next-level answer available.",
   };
 }
+
 function migrateSession(value: any): Session {
   const level: EnglishLevel = ["A1", "A2", "B1", "B2"].includes(
     value.englishLevel,
@@ -177,6 +127,7 @@ function migrateSession(value: any): Session {
   };
   return { ...value, englishLevel: level, turns, feedback } as Session;
 }
+
 function loadHistory(): Session[] {
   const parse = (raw: string | null) => {
     if (!raw) return [];
@@ -206,6 +157,7 @@ function loadHistory(): Session[] {
   }
   return sessions;
 }
+
 function saveSession(session: Session) {
   const next = [
     session,
@@ -218,17 +170,10 @@ function saveSession(session: Session) {
   }
 }
 
-type ProgressDimension = keyof Feedback["dimensionAverages"];
-type ProgressFilterLevel = EnglishLevel | "all";
-
 function average(values: number[]) {
   return values.length
     ? values.reduce((total, value) => total + value, 0) / values.length
     : 0;
-}
-
-function formatScore(value: number) {
-  return value ? value.toFixed(1) : "—";
 }
 
 function summarizeProgress(sessions: Session[]) {
@@ -261,13 +206,6 @@ function summarizeProgress(sessions: Session[]) {
     dimensions,
   };
 }
-
-const dimensionLabels: Record<ProgressDimension, string> = {
-  english: "English",
-  technical: "Technical",
-  relevance: "Relevance",
-  structure: "Structure",
-};
 
 type SpeechCallbacks = {
   onProgress: (wordCount: number) => void;
@@ -446,6 +384,7 @@ export default function InterviewApp() {
       .then((response) => setAuthenticated(response.ok))
       .catch(() => setAuthenticated(false));
   }, []);
+
   useEffect(() => {
     if (stage === "interview" && question)
       void speakQuestion(question, voiceEnabled, ttsAudio, setTtsProvider, {
@@ -453,6 +392,7 @@ export default function InterviewApp() {
         onSpeaking: setVoiceSpeaking,
       });
   }, [question, stage, voiceEnabled]);
+
   useEffect(
     () => () => {
       window.speechSynthesis?.cancel();
@@ -771,6 +711,7 @@ export default function InterviewApp() {
     setActiveCreatedAt("");
     setError("");
   }
+
   function openSession(session: Session) {
     setActiveSessionId(session.id);
     setActiveCreatedAt(session.createdAt);
@@ -780,11 +721,13 @@ export default function InterviewApp() {
     setFeedback(session.feedback || null);
     setStage("results");
   }
+
   function clearHistory() {
     localStorage.removeItem(HISTORY_KEY);
     localStorage.removeItem(LEGACY_HISTORY_KEY);
     setHistory([]);
   }
+
   function deleteCurrentSession() {
     if (activeSessionId === "active") return;
     const next = loadHistory().filter(
@@ -797,6 +740,18 @@ export default function InterviewApp() {
     }
     setHistory(next);
     reset();
+  }
+
+  function exportCurrentSession() {
+    const blob = new Blob([JSON.stringify(currentSession, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "vera-interview.json";
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function login() {
@@ -819,796 +774,119 @@ export default function InterviewApp() {
       setAccessBusy(false);
     }
   }
+
   if (authenticated === null)
     return (
       <main className="app-shell">
         <p aria-live="polite">Cargando Vera…</p>
       </main>
     );
+
   if (!authenticated)
     return (
-      <main className="app-shell">
-        <section
-          className="panel"
-          style={{ maxWidth: 520, margin: "15vh auto" }}
-        >
-          <div className="eyebrow">Vera · interview lab</div>
-          <h1>Acceso privado</h1>
-          <p className="hero-copy">
-            Introduce el código de acceso para comenzar. Tu historial se
-            conserva únicamente en este navegador.
-          </p>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void login();
-            }}
-          >
-            <label className="field">
-              Código de acceso
-              <input
-                autoFocus
-                type="password"
-                value={accessCode}
-                onChange={(event) => setAccessCode(event.target.value)}
-              />
-            </label>
-            <button
-              className="primary-btn wide"
-              disabled={accessBusy || !accessCode.trim()}
-            >
-              {accessBusy ? "Validando…" : "Entrar"}
-            </button>
-            {error && (
-              <p className="error" role="alert">
-                {error}
-              </p>
-            )}
-          </form>
-        </section>
-      </main>
+      <AccessScreen
+        accessCode={accessCode}
+        accessBusy={accessBusy}
+        error={error}
+        onAccessCodeChange={setAccessCode}
+        onSubmit={() => void login()}
+      />
     );
+
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark">
-            <Sparkles size={17} />
-          </span>{" "}
-          vera<span className="subtle">/ interview lab</span>
-        </div>
-        <div className="mono subtle">ENGLISH MODE · 01</div>
-      </header>
+      <InterviewHeader />
       <AnimatePresence mode="wait">
         {stage === "prepare" && (
-          <motion.section
-            key="prepare"
-            className="hero"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -18 }}
-          >
-            <div>
-              <div className="signal">
-                <span className="signal-dot" />
-                AI interviewer ready
-              </div>
-              <div className="eyebrow">Technical interview rehearsal</div>
-              <h1>
-                Practice with <em>purpose.</em>
-              </h1>
-              <p className="hero-copy">
-                Convierte tu próximo puesto o tu experiencia en una entrevista
-                técnica en inglés, diseñada para ayudarte a pensar, responder y
-                mejorar.
-              </p>
-            </div>
-            <div className="panel">
-              <p className="panel-label">01 / prepara tu sesión</p>
-              <div className="field">
-                <label>¿Qué puesto estás buscando?</label>
-                <textarea
-                  value={jobDescription}
-                  onChange={(event) => setJobDescription(event.target.value)}
-                  placeholder="Pega aquí el nombre del puesto, responsabilidades, tecnologías y requisitos..."
-                />
-              </div>
-              <div className="field">
-                <label>Tu nivel de inglés</label>
-                <div
-                  className="level-options"
-                  role="radiogroup"
-                  aria-label="Nivel de inglés"
-                >
-                  {(["A1", "A2", "B1", "B2"] as EnglishLevel[]).map((level) => (
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={englishLevel === level}
-                      tabIndex={englishLevel === level ? 0 : -1}
-                      className={`level-option ${englishLevel === level ? "active" : ""}`}
-                      onClick={() => setEnglishLevel(level)}
-                      key={level}
-                    >
-                      <strong>{level}</strong>
-                      <span>
-                        {
-                          {
-                            A1: "Beginner",
-                            A2: "Elementary",
-                            B1: "Intermediate",
-                            B2: "Upper-intermediate",
-                          }[level]
-                        }
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <small className="level-hint">
-                  La entrevista adaptará su vocabulario y dificultad a este
-                  nivel.
-                </small>
-              </div>
-              <div className="field">
-                <label>
-                  CV <span className="muted">· opcional</span>
-                </label>
-                <label
-                  className={`file-drop ${dragActive ? "drag-active" : ""}`}
-                  onDragEnter={(event) => {
-                    event.preventDefault();
-                    setDragActive(true);
-                  }}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDragLeave={() => setDragActive(false)}
-                  onDrop={handleDrop}
-                >
-                  <FileText size={22} color="var(--accent)" />
-                  <span>
-                    <strong>{fileName || "Arrastra tu CV aquí"}</strong>
-                    <small>
-                      o haz clic para seleccionar un PDF, TXT o Markdown
-                    </small>
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
-                    onChange={(event) =>
-                      void handleFile(event.target.files?.[0])
-                    }
-                  />
-                </label>
-              </div>
-              <button
-                className="primary-btn wide"
-                disabled={busy}
-                onClick={() => void startInterview()}
-              >
-                {busy ? "Preparando tu entrevista…" : "Preparar entrevista"}
-                <Sparkles size={16} />
-              </button>
-              {error && <p className="error">{error}</p>}
-            </div>
-          </motion.section>
+          <PrepareStage
+            jobDescription={jobDescription}
+            englishLevel={englishLevel}
+            cvFileName={fileName}
+            dragActive={dragActive}
+            busy={busy}
+            error={error}
+            onJobDescriptionChange={setJobDescription}
+            onEnglishLevelChange={setEnglishLevel}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setDragActive(true);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
+            onFileChange={(file) => void handleFile(file)}
+            onStart={() => void startInterview()}
+          />
         )}
         {stage === "interview" && profile && (
-          <motion.section
-            key="interview"
-            className="interview-layout"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -18 }}
-          >
-            <div className="panel interview-main">
-              <div>
-                <div className="interview-head">
-                  <div>
-                    <div className="eyebrow">{profile.role}</div>
-                    <h2>
-                      Question {questionIndex + 1}
-                      <span className="subtle"> / {totalQuestions}</span>
-                    </h2>
-                  </div>
-                  <button
-                    className="secondary-btn"
-                    onClick={() => {
-                      setVoiceEnabled((value) => !value);
-                      if (voiceEnabled) {
-                        window.speechSynthesis?.cancel();
-                        ttsAudio.current?.pause();
-                        setTtsProvider("off");
-                        setVoiceSpeaking(false);
-                        setSpokenWordCount(questionWords.length);
-                      }
-                    }}
-                  >
-                    {voiceEnabled ? (
-                      <Volume2 size={16} />
-                    ) : (
-                      <VolumeX size={16} />
-                    )}{" "}
-                    {voiceEnabled
-                      ? `Voice · ${ttsProvider === "streaming" ? "Streaming" : ttsProvider === "system" ? "System" : "Loading"}`
-                      : "Voice off"}
-                  </button>
-                </div>
-                <div className="progress">
-                  <span
-                    style={{
-                      width: `${((turns.length + (turnEvaluation ? 1 : 0)) / totalQuestions) * 100}%`,
-                    }}
-                  />
-                </div>
-                <div
-                  className={`question-card ${voiceSpeaking ? "speaking" : ""}`}
-                >
-                  <blockquote aria-label={question}>
-                    “
-                    {questionWords.map((word, index) => (
-                      <span
-                        className={
-                          index < spokenWordCount ? "spoken" : "pending"
-                        }
-                        key={`${word}-${index}`}
-                      >
-                        {word}
-                        {index < questionWords.length - 1 ? " " : ""}
-                      </span>
-                    ))}
-                    ”
-                  </blockquote>
-                  <cite>
-                    {ttsProvider === "loading" && voiceEnabled
-                      ? "Preparing Vera’s voice…"
-                      : voiceSpeaking
-                        ? "Vera is speaking · follow the highlighted words"
-                        : "Read it aloud, then answer as if you were already in the room."}
-                  </cite>
-                </div>
-              </div>
-              <div className="answer-area">
-                <label className="panel-label">
-                  Your answer · English transcript
-                </label>
-                <textarea
-                  value={answer}
-                  onChange={(event) => {
-                    setAnswer(event.target.value);
-                    if (turnEvaluation) setTurnEvaluation(null);
-                  }}
-                  placeholder="Your transcribed answer will appear here. You can edit it before submitting..."
-                  disabled={busy || Boolean(turnEvaluation)}
-                />
-                <div className="answer-actions">
-                  <button
-                    className={`mic-btn ${listening ? "listening" : ""}`}
-                    aria-label={
-                      listening ? "Stop recording" : "Start recording"
-                    }
-                    onClick={() => void toggleRecording()}
-                    disabled={busy || Boolean(turnEvaluation)}
-                  >
-                    {listening ? <Pause size={22} /> : <Mic size={22} />}
-                  </button>
-                  <div className="muted">
-                    <Waves
-                      size={14}
-                      style={{ verticalAlign: "middle", marginRight: 6 }}
-                    />
-                    {listening
-                      ? "Listening… tap to stop"
-                      : busy
-                        ? "Processing your answer…"
-                        : turnEvaluation
-                          ? "Answer evaluated"
-                          : "Tap the microphone or write"}
-                  </div>
-                  {!turnEvaluation ? (
-                    <button
-                      className="primary-btn"
-                      onClick={() => void evaluateAnswer()}
-                      disabled={busy || !answer.trim()}
-                    >
-                      Evaluate answer
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        className="secondary-btn"
-                        onClick={() => setTurnEvaluation(null)}
-                        disabled={busy}
-                      >
-                        Edit answer
-                      </button>
-                      <button
-                        className="primary-btn"
-                        onClick={() => void continueToNext()}
-                        disabled={busy}
-                      >
-                        {questionIndex + 1 >= totalQuestions
-                          ? "See final feedback"
-                          : "Next question"}
-                      </button>
-                    </>
-                  )}
-                </div>
-                {turnEvaluation && (
-                  <div className="turn-score">
-                    <div className="score-duo">
-                      <div className="score-card primary">
-                        <span>Progreso en {englishLevel}</span>
-                        <strong>
-                          {turnEvaluation.levelScore}
-                          <small>/10</small>
-                        </strong>
-                      </div>
-                      <div className="score-card">
-                        <span>Preparación laboral</span>
-                        <strong>
-                          {turnEvaluation.jobReadinessScore}
-                          <small>/10</small>
-                        </strong>
-                      </div>
-                    </div>
-                    <div className="observed-level">
-                      Nivel demostrado en esta respuesta:{" "}
-                      <strong>{turnEvaluation.observedEnglishLevel}</strong>
-                    </div>
-                    <p className="score-feedback">{turnEvaluation.feedback}</p>
-                    <div className="dimension-scores">
-                      <div>
-                        <strong>{turnEvaluation.englishScore}</strong>
-                        <span>English</span>
-                      </div>
-                      <div>
-                        <strong>{turnEvaluation.technicalScore}</strong>
-                        <span>Técnico</span>
-                      </div>
-                      <div>
-                        <strong>{turnEvaluation.relevanceScore}</strong>
-                        <span>Relevancia</span>
-                      </div>
-                      <div>
-                        <strong>{turnEvaluation.structureScore}</strong>
-                        <span>Estructura</span>
-                      </div>
-                    </div>
-                    <div className="turn-score-grid">
-                      <div>
-                        <b>Lo que funcionó</b>
-                        <ul>
-                          {turnEvaluation.strengths.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <b>Mejora prioritaria</b>
-                        <p>{turnEvaluation.priorityImprovement}</p>
-                      </div>
-                    </div>
-                    <p className="corrected">
-                      <strong>Tu respuesta corregida:</strong>{" "}
-                      {turnEvaluation.correctedAnswer}
-                    </p>
-                    <p className="next-level-answer">
-                      <strong>Respuesta para tu siguiente nivel:</strong>{" "}
-                      {turnEvaluation.nextLevelAnswer}
-                    </p>
-                  </div>
-                )}
-                {error && <p className="error">{error}</p>}
-              </div>
-            </div>
-            <aside className="side-panel">
-              <div className="side-section">
-                <h3>Focus areas</h3>
-                <div className="focus-list">
-                  {profile.focusAreas.map((area) => (
-                    <span className="chip" key={area}>
-                      {area}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="side-section">
-                <h3>Session notes</h3>
-                <p
-                  className="muted"
-                  style={{ lineHeight: 1.6, fontSize: ".83rem", margin: 0 }}
-                >
-                  {profile.summary}
-                </p>
-              </div>
-              <div className="side-section">
-                <h3>Progress</h3>
-                <div className="metric">
-                  <strong>
-                    {Math.round(
-                      ((turns.length + (turnEvaluation ? 1 : 0)) /
-                        totalQuestions) *
-                        100,
-                    )}
-                    %
-                  </strong>
-                  <span>completed</span>
-                </div>
-              </div>
-            </aside>
-          </motion.section>
+          <InterviewStage
+            profile={profile}
+            questionIndex={questionIndex}
+            totalQuestions={totalQuestions}
+            voiceEnabled={voiceEnabled}
+            ttsProvider={ttsProvider}
+            question={question}
+            questionWords={questionWords}
+            spokenWordCount={spokenWordCount}
+            voiceSpeaking={voiceSpeaking}
+            completedTurns={turns.length}
+            turnEvaluation={turnEvaluation}
+            answer={answer}
+            listening={listening}
+            busy={busy}
+            englishLevel={englishLevel}
+            error={error}
+            onToggleVoice={() => {
+              setVoiceEnabled((value) => !value);
+              if (voiceEnabled) {
+                window.speechSynthesis?.cancel();
+                ttsAudio.current?.pause();
+                setTtsProvider("off");
+                setVoiceSpeaking(false);
+                setSpokenWordCount(questionWords.length);
+              }
+            }}
+            onAnswerChange={(value) => {
+              setAnswer(value);
+              if (turnEvaluation) setTurnEvaluation(null);
+            }}
+            onToggleRecording={() => void toggleRecording()}
+            onEvaluate={() => void evaluateAnswer()}
+            onEditAnswer={() => setTurnEvaluation(null)}
+            onContinue={() => void continueToNext()}
+          />
         )}
-        {stage === "results" && feedback && profile && (
-          <motion.section
-            key="results"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="panel">
-              <div className="interview-head">
-                <div>
-                  <div className="eyebrow">
-                    Session complete · {profile.role}
-                  </div>
-                  <h2>
-                    Make the next answer{" "}
-                    <span style={{ color: "var(--accent)" }}>stronger.</span>
-                  </h2>
-                  <p className="hero-copy" style={{ margin: 0 }}>
-                    {feedback.summary}
-                  </p>
-                </div>
-                <div
-                  className="score-ring"
-                  style={{
-                    ["--score" as string]: `${feedback.levelScore * 10}%`,
-                  }}
-                >
-                  <strong>
-                    {feedback.levelScore}
-                    <small>/10</small>
-                  </strong>
-                </div>
-              </div>
-              <div className="result-score-duo">
-                <div className="score-card primary">
-                  <span>Progreso en {englishLevel}</span>
-                  <strong>
-                    {feedback.levelScore}
-                    <small>/10</small>
-                  </strong>
-                </div>
-                <div className="score-card">
-                  <span>Preparación laboral</span>
-                  <strong>
-                    {feedback.jobReadinessScore}
-                    <small>/10</small>
-                  </strong>
-                </div>
-              </div>
-              <div className="metrics result-metrics">
-                <div className="metric">
-                  <strong>{feedback.englishLevel}</strong>
-                  <span>Observed English</span>
-                </div>
-                <div className="metric">
-                  <strong>{feedback.dimensionAverages.english}/10</strong>
-                  <span>English progress</span>
-                </div>
-                <div className="metric">
-                  <strong>{feedback.dimensionAverages.technical}/10</strong>
-                  <span>Technical</span>
-                </div>
-                <div className="metric">
-                  <strong>{feedback.dimensionAverages.relevance}/10</strong>
-                  <span>Relevance</span>
-                </div>
-                <div className="metric">
-                  <strong>{feedback.dimensionAverages.structure}/10</strong>
-                  <span>Structure</span>
-                </div>
-              </div>
-              <div className="feedback-grid">
-                <div className="feedback-card">
-                  <h3>Strengths</h3>
-                  {feedback.strengths.map((item) => (
-                    <p key={item.label}>
-                      <strong>{item.label}.</strong> {item.description}
-                    </p>
-                  ))}
-                </div>
-                <div className="feedback-card">
-                  <h3>Gaps</h3>
-                  {feedback.gaps.map((item) => (
-                    <p key={item.label}>
-                      <strong>{item.label}.</strong> {item.description}
-                    </p>
-                  ))}
-                </div>
-                <div className="feedback-card">
-                  <h3>Next practice</h3>
-                  {feedback.recommendations.map((item) => (
-                    <p key={item.label}>
-                      <strong>{item.label}.</strong> {item.description}
-                    </p>
-                  ))}
-                </div>
-              </div>
-              <h3 className="panel-label" style={{ marginTop: 32 }}>
-                Turn-by-turn review
-              </h3>
-              {turns.map((turn, index) => {
-                const review = feedback.turnReviews.find(
-                  (item) => item.turnIndex === index,
-                );
-                const levelScore =
-                  turn.evaluation?.levelScore ?? review?.levelScore ?? 0;
-                const jobScore =
-                  turn.evaluation?.jobReadinessScore ??
-                  review?.jobReadinessScore ??
-                  0;
-                return (
-                  <div
-                    className="turn-review"
-                    key={`${turn.question}-${index}`}
-                  >
-                    <h3>
-                      {index + 1}. {turn.question}{" "}
-                      <span className="chip">Nivel {levelScore}/10</span>{" "}
-                      <span className="chip">Trabajo {jobScore}/10</span>
-                    </h3>
-                    <p>
-                      <strong>Your answer:</strong> {turn.answer}
-                    </p>
-                    {review && (
-                      <>
-                        <p>{review.feedback}</p>
-                        <p className="corrected">
-                          <strong>Stronger English:</strong>{" "}
-                          {review.correctedAnswer}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-              <div className="answer-actions" style={{ marginTop: 28 }}>
-                <button className="secondary-btn" onClick={reset}>
-                  <RotateCcw size={16} /> New interview
-                </button>
-                {activeSessionId !== "active" && (
-                  <button
-                    className="secondary-btn"
-                    onClick={deleteCurrentSession}
-                  >
-                    Delete session
-                  </button>
-                )}
-                <button
-                  className="primary-btn"
-                  onClick={() => {
-                    const blob = new Blob(
-                      [JSON.stringify(currentSession, null, 2)],
-                      { type: "application/json" },
-                    );
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = "vera-interview.json";
-                    link.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  Export session
-                </button>
-              </div>
-            </div>
-          </motion.section>
+        {stage === "results" && profile && (
+          <ResultsStage
+            profile={profile}
+            feedback={feedback}
+            englishLevel={englishLevel}
+            turns={turns}
+            activeSessionId={activeSessionId}
+            onReset={reset}
+            onDeleteCurrentSession={deleteCurrentSession}
+            onExportSession={exportCurrentSession}
+          />
         )}
       </AnimatePresence>
       {stage === "prepare" && (
         <section style={{ marginTop: 28 }}>
           {history.length > 0 && (
-            <div className="panel progress-panel">
-              <div className="interview-head">
-                <div>
-                  <div className="eyebrow">Progress overview</div>
-                  <h2 style={{ fontSize: "1.4rem", margin: "10px 0 0" }}>
-                    See how your practice is moving
-                  </h2>
-                  <p className="muted progress-intro">
-                    A local view of completed interviews. Nothing is uploaded or
-                    synced.
-                  </p>
-                </div>
-                <div className="progress-filters" aria-label="Progress filters">
-                  <label>
-                    Role
-                    <select
-                      value={progressRole}
-                      onChange={(event) => setProgressRole(event.target.value)}
-                    >
-                      <option value="all">All roles</option>
-                      {progressRoles.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Level
-                    <select
-                      value={progressLevel}
-                      onChange={(event) =>
-                        setProgressLevel(
-                          event.target.value as ProgressFilterLevel,
-                        )
-                      }
-                    >
-                      <option value="all">All levels</option>
-                      {(["A1", "A2", "B1", "B2"] as EnglishLevel[]).map(
-                        (level) => (
-                          <option key={level} value={level}>
-                            {level}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </label>
-                </div>
-              </div>
-              {progress.completed.length === 0 ? (
-                <p className="empty">
-                  No completed interviews match these filters yet.
-                </p>
-              ) : (
-                <>
-                  <div
-                    className="progress-summary"
-                    aria-label="Progress summary"
-                  >
-                    <div className="progress-stat">
-                      <span>Completed</span>
-                      <strong>{progress.completed.length}</strong>
-                      <small>interviews</small>
-                    </div>
-                    <div className="progress-stat">
-                      <span>English progress</span>
-                      <strong>
-                        {formatScore(progress.averageLevel)}
-                        <small>/10</small>
-                      </strong>
-                      <small>average level score</small>
-                    </div>
-                    <div className="progress-stat">
-                      <span>Job readiness</span>
-                      <strong>
-                        {formatScore(progress.averageJobReadiness)}
-                        <small>/10</small>
-                      </strong>
-                      <small>average score</small>
-                    </div>
-                  </div>
-                  <div className="progress-grid">
-                    <div className="progress-dimensions">
-                      <h3>Dimensions</h3>
-                      {(
-                        Object.keys(dimensionLabels) as ProgressDimension[]
-                      ).map((dimension) => {
-                        const score = progress.dimensions[dimension];
-                        return (
-                          <div className="dimension-row" key={dimension}>
-                            <div>
-                              <span>{dimensionLabels[dimension]}</span>
-                              <strong>
-                                {formatScore(score)}
-                                <small>/10</small>
-                              </strong>
-                            </div>
-                            <div
-                              className="dimension-track"
-                              aria-label={`${dimensionLabels[dimension]} ${formatScore(score)} out of 10`}
-                            >
-                              <span style={{ width: `${score * 10}%` }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="progress-recent">
-                      <h3>Recent practice</h3>
-                      {progress.completed.slice(0, 5).map((session) => (
-                        <div className="progress-session" key={session.id}>
-                          <div>
-                            <strong>{session.profile.role}</strong>
-                            <small>
-                              {new Date(session.createdAt).toLocaleDateString()}{" "}
-                              · {session.englishLevel || "B1"}
-                            </small>
-                          </div>
-                          <span className="chip">
-                            {session.feedback.levelScore}/10
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            <ProgressOverview
+              progress={progress}
+              progressRole={progressRole}
+              progressLevel={progressLevel}
+              progressRoles={progressRoles}
+              onProgressRoleChange={setProgressRole}
+              onProgressLevelChange={setProgressLevel}
+            />
           )}
-          <div className="panel">
-            <div className="interview-head">
-              <div>
-                <div className="eyebrow">
-                  <History
-                    size={13}
-                    style={{ verticalAlign: "middle", marginRight: 5 }}
-                  />{" "}
-                  Recent sessions
-                </div>
-                <h2 style={{ fontSize: "1.4rem", margin: "10px 0 0" }}>
-                  Your practice archive
-                </h2>
-              </div>
-              {history.length > 0 && (
-                <button
-                  className="secondary-btn"
-                  type="button"
-                  onClick={clearHistory}
-                >
-                  Delete local history
-                </button>
-              )}
-            </div>
-            {history.length === 0 ? (
-              <p className="empty">
-                Your completed interviews will live here, locally and privately.
-              </p>
-            ) : (
-              history.slice(0, 4).map((session) => (
-                <button
-                  className="history-item"
-                  key={session.id}
-                  onClick={() => openSession(session)}
-                >
-                  <span>
-                    <strong>{session.profile.role}</strong>
-                    <small>
-                      {new Date(session.createdAt).toLocaleDateString()} ·{" "}
-                      {session.turns.length} answers ·{" "}
-                      {session.englishLevel || "B1"}
-                    </small>
-                  </span>
-                  <span className="chip">
-                    {session.feedback
-                      ? `${session.feedback.levelScore}/10`
-                      : "—"}
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
+          <SessionHistory
+            history={history}
+            onClearHistory={clearHistory}
+            onOpenSession={openSession}
+          />
         </section>
-      )}
-      {stage === "results" && profile && !feedback && (
-        <motion.section
-          key="incomplete"
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="panel">
-            <div className="eyebrow">Session incomplete</div>
-            <h2>This interview has no final feedback yet.</h2>
-            <p className="hero-copy">
-              You can start a new interview. Incomplete sessions remain
-              recoverable in your local archive.
-            </p>
-            <button className="primary-btn" onClick={reset}>
-              <RotateCcw size={16} /> New interview
-            </button>
-          </div>
-        </motion.section>
       )}
     </main>
   );
