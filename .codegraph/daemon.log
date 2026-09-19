@@ -7,3 +7,25 @@
 [2026-09-18T03:13:07.342Z] [CodeGraph MCP] Query pool: up to 9 worker thread(s) for concurrent reads.
 [2026-09-18T03:13:07.565Z] [CodeGraph MCP] Caught up 11 file(s) changed since last run
 [2026-09-18T03:18:08.049Z] [CodeGraph daemon] Shutting down (idle timeout; clients=0).
+[2026-09-18T04:27:00.494Z] [CodeGraph daemon] Another daemon (pid 47226) already holds the lock; exiting.
+[2026-09-18T04:27:00.516Z] [CodeGraph daemon] Listening on /Users/alan/Documents/Dev/projects/voice-ia/.codegraph/daemon.sock (pid 47226, v1.6.0). Idle timeout 300000ms.
+[2026-09-18T04:27:00.586Z] [CodeGraph MCP] File watcher active — graph will auto-sync on changes
+[2026-09-18T04:27:00.587Z] [CodeGraph MCP] Query pool: up to 9 worker thread(s) for concurrent reads.
+[2026-09-18T04:27:00.761Z] [CodeGraph MCP] Caught up 2 file(s) changed since last run
+[2026-09-19T23:13:47.419Z] [CodeGraph MCP] Auto-synced 1 file(s) in 54ms
+[2026-09-19T23:14:09.949Z] [CodeGraph MCP] Auto-synced 2 file(s) in 34ms
+[2026-09-19T23:14:34.371Z] [CodeGraph MCP] Auto-synced 1 file(s) in 8ms
+[2026-09-19T23:15:14.510Z] [CodeGraph MCP] Auto-synced 5 file(s) in 30ms
+[2026-09-19T23:15:49.485Z] [CodeGraph MCP] Auto-synced 1 file(s) in 10ms
+[2026-09-19T23:16:19.274Z] [CodeGraph MCP] Auto-synced 1 file(s) in 13ms
+[2026-09-19T23:16:29.074Z] [CodeGraph MCP] Auto-synced 1 file(s) in 10ms
+[2026-09-19T23:16:37.387Z] [CodeGraph MCP] Auto-synced 1 file(s) in 12ms
+[2026-09-19T23:16:55.102Z] [CodeGraph MCP] Auto-synced 1 file(s) in 9ms
+[2026-09-19T23:16:57.432Z] [CodeGraph MCP] Auto-synced 1 file(s) in 8ms
+[2026-09-19T23:17:35.225Z] [CodeGraph MCP] Auto-synced 1 file(s) in 14ms
+[2026-09-19T23:17:47.546Z] [CodeGraph MCP] Auto-synced 1 file(s) in 11ms
+[2026-09-19T23:18:00.849Z] [CodeGraph MCP] Auto-synced 1 file(s) in 9ms
+[2026-09-19T23:18:08.876Z] [CodeGraph MCP] Auto-synced 1 file(s) in 21ms
+[2026-09-19T23:18:29.070Z] [CodeGraph MCP] Auto-synced 3 file(s) in 57ms
+[2026-09-19T23:18:47.341Z] [CodeGraph MCP] Auto-synced 7 file(s) in 59ms
+[2026-09-19T23:19:34.415Z] [CodeGraph MCP] Auto-synced 1 file(s) in 12ms

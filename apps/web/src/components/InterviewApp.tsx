@@ -35,6 +35,7 @@ import { ResultsStage } from "./ResultsStage";
 import { SessionHistory } from "./SessionHistory";
 import { useAnswerRecorder } from "./useAnswerRecorder";
 import { useQuestionSpeech } from "./useQuestionSpeech";
+import { ui } from "./uiClasses";
 
 const API = import.meta.env.PUBLIC_API_URL || "http://localhost:3001";
 
@@ -432,7 +433,7 @@ export default function InterviewApp() {
 
   if (authenticated === null)
     return (
-      <main className="app-shell">
+      <main className={ui.shell}>
         <p aria-live="polite">Cargando Vera…</p>
       </main>
     );
@@ -449,7 +450,7 @@ export default function InterviewApp() {
     );
 
   return (
-    <main className="app-shell">
+    <main className={ui.shell}>
       <InterviewHeader />
       <AnimatePresence mode="wait">
         {stage === "prepare" && (
@@ -519,7 +520,7 @@ export default function InterviewApp() {
         )}
       </AnimatePresence>
       {stage === "prepare" && (
-        <section style={{ marginTop: 28 }}>
+        <section className="mt-7">
           {history.length > 0 && (
             <ProgressOverview
               progress={progress}

@@ -6,6 +6,7 @@ import type {
   Profile,
   Turn,
 } from "./InterviewApp.types";
+import { ui } from "./uiClasses";
 
 type ResultsStageProps = {
   profile: Profile;
@@ -35,14 +36,16 @@ export function ResultsStage({
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="panel">
-          <div className="eyebrow">Session incomplete</div>
-          <h2>This interview has no final feedback yet.</h2>
-          <p className="hero-copy">
+        <div className={ui.panel}>
+          <div className={ui.eyebrow}>Session incomplete</div>
+          <h2 className="mt-3 text-[clamp(1.5rem,3vw,2.7rem)] font-bold tracking-[-0.05em]">
+            This interview has no final feedback yet.
+          </h2>
+          <p className="my-5 max-w-[500px] text-[1.05rem] leading-[1.7] text-muted">
             You can start a new interview. Incomplete sessions remain
             recoverable in your local archive.
           </p>
-          <button className="primary-btn" onClick={onReset}>
+          <button className={ui.primary} onClick={onReset}>
             <RotateCcw size={16} /> New interview
           </button>
         </div>
@@ -55,97 +58,115 @@ export function ResultsStage({
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="panel">
-        <div className="interview-head">
+      <div className={ui.panel}>
+        <div className="flex items-start justify-between gap-5 max-[560px]:flex-col">
           <div>
-            <div className="eyebrow">Session complete · {profile.role}</div>
-            <h2>
+            <div className={ui.eyebrow}>Session complete · {profile.role}</div>
+            <h2 className="my-2 text-[clamp(1.5rem,3vw,2.7rem)] font-bold leading-[1.06] tracking-[-0.05em]">
               Make the next answer{" "}
-              <span style={{ color: "var(--accent)" }}>stronger.</span>
+              <span className="text-accent">stronger.</span>
             </h2>
-            <p className="hero-copy" style={{ margin: 0 }}>
+            <p className="m-0 max-w-[500px] text-[1.05rem] leading-[1.7] text-muted">
               {feedback.summary}
             </p>
           </div>
           <div
-            className="score-ring"
+            className="relative mb-[22px] grid size-[116px] place-items-center rounded-full bg-[conic-gradient(var(--color-accent)_var(--score),rgb(255_255_255_/_8%)_0)] after:absolute after:inset-[9px] after:rounded-full after:bg-panel-hi"
             style={{
               ["--score" as string]: `${feedback.levelScore * 10}%`,
             }}
           >
-            <strong>
+            <strong className="z-10 text-[1.8rem]">
               {feedback.levelScore}
-              <small>/10</small>
+              <small className="block text-center text-[0.65rem] text-muted">
+                /10
+              </small>
             </strong>
           </div>
         </div>
-        <div className="result-score-duo">
-          <div className="score-card primary">
-            <span>Progreso en {englishLevel}</span>
-            <strong>
+        <div className="mt-6 grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
+          <div className="rounded-[17px] border border-[rgb(198_242_107_/_38%)] bg-[rgb(198_242_107_/_9%)] p-4">
+            <span className="block text-[0.72rem] text-muted">
+              Progreso en {englishLevel}
+            </span>
+            <strong className="mt-2 block text-[2rem] leading-none text-accent">
               {feedback.levelScore}
-              <small>/10</small>
+              <small className="ml-[3px] text-[0.75rem] text-muted">/10</small>
             </strong>
           </div>
-          <div className="score-card">
-            <span>Preparación laboral</span>
-            <strong>
+          <div className="rounded-[17px] border border-line bg-white/[0.04] p-4">
+            <span className="block text-[0.72rem] text-muted">
+              Preparación laboral
+            </span>
+            <strong className="mt-2 block text-[2rem] leading-none text-ink">
               {feedback.jobReadinessScore}
-              <small>/10</small>
+              <small className="ml-[3px] text-[0.75rem] text-muted">/10</small>
             </strong>
           </div>
         </div>
-        <div className="metrics result-metrics">
-          <div className="metric">
-            <strong>{feedback.englishLevel}</strong>
-            <span>Observed English</span>
+        <div className="mt-5 grid grid-cols-5 gap-2.5 max-[560px]:grid-cols-2">
+          <div className={ui.metric}>
+            <strong className={ui.metricValue}>{feedback.englishLevel}</strong>
+            <span className={ui.metricLabel}>Observed English</span>
           </div>
-          <div className="metric">
-            <strong>{feedback.dimensionAverages.english}/10</strong>
-            <span>English progress</span>
+          <div className={ui.metric}>
+            <strong className={ui.metricValue}>
+              {feedback.dimensionAverages.english}/10
+            </strong>
+            <span className={ui.metricLabel}>English progress</span>
           </div>
-          <div className="metric">
-            <strong>{feedback.dimensionAverages.technical}/10</strong>
-            <span>Technical</span>
+          <div className={ui.metric}>
+            <strong className={ui.metricValue}>
+              {feedback.dimensionAverages.technical}/10
+            </strong>
+            <span className={ui.metricLabel}>Technical</span>
           </div>
-          <div className="metric">
-            <strong>{feedback.dimensionAverages.relevance}/10</strong>
-            <span>Relevance</span>
+          <div className={ui.metric}>
+            <strong className={ui.metricValue}>
+              {feedback.dimensionAverages.relevance}/10
+            </strong>
+            <span className={ui.metricLabel}>Relevance</span>
           </div>
-          <div className="metric">
-            <strong>{feedback.dimensionAverages.structure}/10</strong>
-            <span>Structure</span>
+          <div className={ui.metric}>
+            <strong className={ui.metricValue}>
+              {feedback.dimensionAverages.structure}/10
+            </strong>
+            <span className={ui.metricLabel}>Structure</span>
           </div>
         </div>
-        <div className="feedback-grid">
-          <div className="feedback-card">
-            <h3>Strengths</h3>
+        <div className="my-6 grid grid-cols-3 gap-3 max-[560px]:grid-cols-1">
+          <div className="rounded-[18px] bg-white/[0.045] p-[18px]">
+            <h3 className="mb-3 text-[0.75rem] uppercase tracking-[0.12em] text-muted">
+              Strengths
+            </h3>
             {feedback.strengths.map((item) => (
-              <p key={item.label}>
+              <p className="text-[0.85rem] leading-[1.55]" key={item.label}>
                 <strong>{item.label}.</strong> {item.description}
               </p>
             ))}
           </div>
-          <div className="feedback-card">
-            <h3>Gaps</h3>
+          <div className="rounded-[18px] bg-white/[0.045] p-[18px]">
+            <h3 className="mb-3 text-[0.75rem] uppercase tracking-[0.12em] text-muted">
+              Gaps
+            </h3>
             {feedback.gaps.map((item) => (
-              <p key={item.label}>
+              <p className="text-[0.85rem] leading-[1.55]" key={item.label}>
                 <strong>{item.label}.</strong> {item.description}
               </p>
             ))}
           </div>
-          <div className="feedback-card">
-            <h3>Next practice</h3>
+          <div className="rounded-[18px] bg-white/[0.045] p-[18px]">
+            <h3 className="mb-3 text-[0.75rem] uppercase tracking-[0.12em] text-muted">
+              Next practice
+            </h3>
             {feedback.recommendations.map((item) => (
-              <p key={item.label}>
+              <p className="text-[0.85rem] leading-[1.55]" key={item.label}>
                 <strong>{item.label}.</strong> {item.description}
               </p>
             ))}
           </div>
         </div>
-        <h3 className="panel-label" style={{ marginTop: 32 }}>
-          Turn-by-turn review
-        </h3>
+        <h3 className={`${ui.panelLabel} mt-8`}>Turn-by-turn review</h3>
         {turns.map((turn, index) => {
           const review = feedback.turnReviews.find(
             (item) => item.turnIndex === index,
@@ -157,19 +178,24 @@ export function ResultsStage({
             review?.jobReadinessScore ??
             0;
           return (
-            <div className="turn-review" key={`${turn.question}-${index}`}>
-              <h3>
+            <div
+              className="border-t border-line py-[18px]"
+              key={`${turn.question}-${index}`}
+            >
+              <h3 className="mb-2 text-base font-bold">
                 {index + 1}. {turn.question}{" "}
-                <span className="chip">Nivel {levelScore}/10</span>{" "}
-                <span className="chip">Trabajo {jobScore}/10</span>
+                <span className={ui.chip}>Nivel {levelScore}/10</span>{" "}
+                <span className={ui.chip}>Trabajo {jobScore}/10</span>
               </h3>
-              <p>
+              <p className="my-[5px] text-[0.88rem] leading-[1.55] text-muted">
                 <strong>Your answer:</strong> {turn.answer}
               </p>
               {review && (
                 <>
-                  <p>{review.feedback}</p>
-                  <p className="corrected">
+                  <p className="my-[5px] text-[0.88rem] leading-[1.55] text-muted">
+                    {review.feedback}
+                  </p>
+                  <p className="my-[5px] text-[0.88rem] leading-[1.55] text-ink">
                     <strong>Stronger English:</strong> {review.correctedAnswer}
                   </p>
                 </>
@@ -177,16 +203,16 @@ export function ResultsStage({
             </div>
           );
         })}
-        <div className="answer-actions" style={{ marginTop: 28 }}>
-          <button className="secondary-btn" onClick={onReset}>
+        <div className="mt-7 flex items-center justify-between gap-3 max-[560px]:flex-col-reverse max-[560px]:items-stretch">
+          <button className={ui.secondary} onClick={onReset}>
             <RotateCcw size={16} /> New interview
           </button>
           {activeSessionId !== "active" && (
-            <button className="secondary-btn" onClick={onDeleteCurrentSession}>
+            <button className={ui.secondary} onClick={onDeleteCurrentSession}>
               Delete session
             </button>
           )}
-          <button className="primary-btn" onClick={onExportSession}>
+          <button className={ui.primary} onClick={onExportSession}>
             Export session
           </button>
         </div>

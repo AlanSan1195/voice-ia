@@ -8,8 +8,8 @@
     "typecheck": "astro check"
   },
   "dependencies": {
-    "@voice-ia/contracts": "workspace:*",
     "@astrojs/react": "6.0.2",
+    "@voice-ia/contracts": "workspace:*",
     "astro": "^7.2.8",
     "lucide-react": "0.468.0",
     "motion": "12.43.0",
@@ -18,8 +18,10 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^6.0.0"
   }
 }
