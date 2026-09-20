@@ -1,6 +1,7 @@
 import type {
   EnglishLevel,
   Feedback,
+  InterviewCoaching,
   ProgressDimension,
   ProgressSummary,
   Session,
@@ -33,6 +34,11 @@ function arrayValue(value: unknown) {
   return Array.isArray(value) ? value : [];
 }
 
+function appearsExactlyOnce(answer: string, quote: string) {
+  const first = answer.indexOf(quote);
+  return first !== -1 && first === answer.lastIndexOf(quote);
+}
+
 function dedupeSessions(sessions: Session[]) {
   const seen = new Set<string>();
   return sessions.filter((session) => {
@@ -50,9 +56,11 @@ export function normalizeScore(value: unknown, fallback = 5) {
 function migrateEvaluation(
   value: unknown,
   level: EnglishLevel,
+  answer: string,
 ): TurnEvaluation | undefined {
   if (!isRecord(value)) return undefined;
   const score = normalizeScore(value.levelScore ?? value.score);
+  const coaching = migrateCoaching(value.coaching, answer);
   return {
     levelScore: score,
     jobReadinessScore: normalizeScore(value.jobReadinessScore, score),
@@ -84,6 +92,59 @@ function migrateEvaluation(
       value.nextLevelAnswer ?? value.correctedAnswer,
       "No next-level answer available.",
     ),
+    ...(coaching ? { coaching } : {}),
+  };
+}
+
+function migrateCoaching(
+  value: unknown,
+  answer: string,
+): InterviewCoaching | undefined {
+  if (!isRecord(value) || !isRecord(value.interview)) return undefined;
+  const interview = value.interview;
+  const skill = interview.skill;
+  const technique = stringValue(interview.technique);
+  const action = stringValue(interview.action);
+  const miniChallenge = stringValue(interview.miniChallenge);
+  if (
+    (skill !== "technical" && skill !== "relevance" && skill !== "structure") ||
+    !technique ||
+    !action ||
+    !miniChallenge
+  )
+    return undefined;
+
+  const evidence =
+    typeof interview.evidence === "string" &&
+    interview.evidence.length > 0 &&
+    appearsExactlyOnce(answer, interview.evidence)
+      ? interview.evidence
+      : undefined;
+  const languageValue = isRecord(value.language) ? value.language : null;
+  const language =
+    languageValue &&
+    typeof languageValue.original === "string" &&
+    languageValue.original.length > 0 &&
+    typeof languageValue.replacement === "string" &&
+    languageValue.replacement.length > 0 &&
+    typeof languageValue.why === "string" &&
+    languageValue.why.length > 0 &&
+    appearsExactlyOnce(answer, languageValue.original)
+      ? {
+          original: languageValue.original,
+          replacement: languageValue.replacement,
+          why: languageValue.why,
+        }
+      : undefined;
+  return {
+    ...(language ? { language } : {}),
+    interview: {
+      skill,
+      ...(evidence ? { evidence } : {}),
+      technique,
+      action,
+      miniChallenge,
+    },
   };
 }
 
@@ -92,7 +153,7 @@ function migrateTurn(value: unknown, level: EnglishLevel): Turn | undefined {
   const question = stringValue(value.question);
   const answer = stringValue(value.answer);
   if (!question || !answer) return undefined;
-  const evaluation = migrateEvaluation(value.evaluation, level);
+  const evaluation = migrateEvaluation(value.evaluation, level, answer);
   return {
     question,
     answer,

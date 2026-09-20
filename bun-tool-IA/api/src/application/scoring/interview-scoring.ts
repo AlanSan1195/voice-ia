@@ -2,6 +2,7 @@ import { z } from "zod";
 import type {
   EnglishLevel,
   FeedbackItem,
+  InterviewCoaching,
   InterviewFeedback,
   InterviewTurn,
   InterviewTurnEvaluation,
@@ -11,6 +12,37 @@ const score = z.number().min(1).max(10);
 const feedbackItemSchema = z
   .object({ label: z.string().min(1), description: z.string().min(1) })
   .strict();
+
+export const coachingLanguageSchema = z
+  .object({
+    original: z.string().trim().min(1).max(240),
+    replacement: z.string().trim().min(1).max(240),
+    why: z.string().trim().min(1).max(280),
+  })
+  .strict();
+export const coachingInterviewSchema = z
+  .object({
+    skill: z.enum(["technical", "relevance", "structure"]),
+    evidence: z.string().trim().min(1).max(360).optional(),
+    technique: z.string().trim().min(1).max(280),
+    action: z.string().trim().min(1).max(280),
+    miniChallenge: z.string().trim().min(1).max(280),
+  })
+  .strict();
+export const coachingSchema = z
+  .object({
+    language: coachingLanguageSchema.optional(),
+    interview: coachingInterviewSchema,
+  })
+  .strict();
+
+// Coaching is an enrichment. A malformed optional block must not discard the
+// scores and feedback that are required to continue the interview.
+export const coachingFieldSchema = z.preprocess((value) => {
+  if (value === undefined) return undefined;
+  const parsed = coachingSchema.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+}, coachingSchema.optional());
 
 export const turnAssessmentSchema = z
   .object({
@@ -26,6 +58,7 @@ export const turnAssessmentSchema = z
     priorityImprovement: z.string().min(1),
     correctedAnswer: z.string().min(1),
     nextLevelAnswer: z.string().min(1),
+    coaching: coachingFieldSchema,
   })
   .strict();
 
@@ -41,13 +74,46 @@ export const feedbackNarrativeSchema = z
 export type TurnAssessment = z.infer<typeof turnAssessmentSchema>;
 export type FeedbackNarrative = z.infer<typeof feedbackNarrativeSchema>;
 
+function appearsExactlyOnce(answer: string, quote: string) {
+  const first = answer.indexOf(quote);
+  return first !== -1 && first === answer.lastIndexOf(quote);
+}
+
+export function sanitizeCoaching(
+  coaching: InterviewCoaching | undefined,
+  answer: string,
+): InterviewCoaching | undefined {
+  if (!coaching) return undefined;
+  const language =
+    coaching.language && appearsExactlyOnce(answer, coaching.language.original)
+      ? coaching.language
+      : undefined;
+  const evidence =
+    coaching.interview.evidence &&
+    appearsExactlyOnce(answer, coaching.interview.evidence)
+      ? coaching.interview.evidence
+      : undefined;
+  const { evidence: _rawEvidence, ...interview } = coaching.interview;
+  return {
+    ...(language ? { language } : {}),
+    interview: {
+      ...interview,
+      ...(evidence ? { evidence } : {}),
+    },
+  };
+}
+
 const round1 = (value: number) => Math.round(value * 10) / 10;
 const average = (values: number[]) =>
   round1(values.reduce((sum, value) => sum + value, 0) / values.length);
 
 export function calculateTurnEvaluation(
   assessment: TurnAssessment,
+  answer?: string,
 ): InterviewTurnEvaluation {
+  const coaching = answer
+    ? sanitizeCoaching(assessment.coaching, answer)
+    : assessment.coaching;
   return {
     levelScore: round1(
       assessment.englishScore * 0.3 +
@@ -73,6 +139,7 @@ export function calculateTurnEvaluation(
     priorityImprovement: assessment.priorityImprovement,
     correctedAnswer: assessment.correctedAnswer,
     nextLevelAnswer: assessment.nextLevelAnswer,
+    ...(coaching ? { coaching } : {}),
   };
 }
 

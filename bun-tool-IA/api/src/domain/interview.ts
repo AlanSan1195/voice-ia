@@ -2,6 +2,20 @@ export { TOTAL_QUESTIONS } from "@voice-ia/contracts";
 
 export type ProviderName = "groq" | "cerebras";
 export type EnglishLevel = "A1" | "A2" | "B1" | "B2";
+export type InterviewCoaching = {
+  language?: {
+    original: string;
+    replacement: string;
+    why: string;
+  };
+  interview: {
+    skill: "technical" | "relevance" | "structure";
+    evidence?: string;
+    technique: string;
+    action: string;
+    miniChallenge: string;
+  };
+};
 export type InterviewTurnEvaluation = {
   levelScore: number;
   jobReadinessScore: number;
@@ -15,6 +29,7 @@ export type InterviewTurnEvaluation = {
   priorityImprovement: string;
   correctedAnswer: string;
   nextLevelAnswer: string;
+  coaching?: InterviewCoaching;
 };
 export type InterviewTurn = {
   question: string;

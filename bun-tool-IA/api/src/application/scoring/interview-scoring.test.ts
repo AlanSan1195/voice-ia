@@ -65,6 +65,59 @@ describe("interview scoring", () => {
     ]);
   });
 
+  test("keeps valid coaching and drops only unverified quote fields", () => {
+    const parsed = turnAssessmentSchema.parse({
+      ...assessment,
+      coaching: {
+        language: {
+          original: "I improved",
+          replacement: "I made",
+          why: "Usa un verbo preciso.",
+        },
+        interview: {
+          skill: "structure",
+          evidence: "the API",
+          technique: "Acción + evidencia",
+          action: "Explica cómo comprobaste la mejora.",
+          miniChallenge: "Reescribe la respuesta en 30 segundos.",
+        },
+      },
+    });
+    const result = calculateTurnEvaluation(
+      parsed,
+      "I improved the API after profiling it.",
+    );
+    expect(result.coaching?.language?.original).toBe("I improved");
+    expect(result.coaching?.interview.evidence).toBe("the API");
+    expect(result.levelScore).toBe(7.9);
+
+    const unverified = calculateTurnEvaluation(
+      parsed,
+      "I improved the API. I improved the API again.",
+    );
+    expect(unverified.coaching?.language).toBeUndefined();
+    expect(unverified.coaching?.interview.evidence).toBeUndefined();
+    expect(unverified.coaching?.interview.action).toBe(
+      "Explica cómo comprobaste la mejora.",
+    );
+  });
+
+  test("ignores malformed optional coaching without losing the assessment", () => {
+    const parsed = turnAssessmentSchema.parse({
+      ...assessment,
+      coaching: {
+        interview: {
+          skill: "unsupported",
+          technique: "",
+          action: "",
+          miniChallenge: "",
+        },
+      },
+    });
+    expect(parsed.coaching).toBeUndefined();
+    expect(calculateTurnEvaluation(parsed).technicalScore).toBe(7);
+  });
+
   test("uses saved turn evaluations for final averages", () => {
     const first = calculateTurnEvaluation(assessment);
     const second = calculateTurnEvaluation({

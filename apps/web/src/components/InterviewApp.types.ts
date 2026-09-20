@@ -3,6 +3,21 @@ export type Provider = "groq" | "cerebras";
 export type EnglishLevel = "A1" | "A2" | "B1" | "B2";
 export type TtsProvider = "loading" | "streaming" | "system" | "off";
 
+export type InterviewCoaching = {
+  language?: {
+    original: string;
+    replacement: string;
+    why: string;
+  };
+  interview: {
+    skill: "technical" | "relevance" | "structure";
+    evidence?: string;
+    technique: string;
+    action: string;
+    miniChallenge: string;
+  };
+};
+
 export type TurnEvaluation = {
   levelScore: number;
   jobReadinessScore: number;
@@ -16,6 +31,7 @@ export type TurnEvaluation = {
   priorityImprovement: string;
   correctedAnswer: string;
   nextLevelAnswer: string;
+  coaching?: InterviewCoaching;
 };
 
 export type Turn = {

@@ -10,6 +10,7 @@ import {
 import {
   buildInterviewFeedback,
   calculateTurnEvaluation,
+  coachingFieldSchema,
   feedbackNarrativeSchema,
   turnAssessmentSchema,
 } from "../scoring/interview-scoring";
@@ -37,6 +38,7 @@ const turnEvaluationSchema = z.object({
   priorityImprovement: z.string().min(1),
   correctedAnswer: z.string().min(1),
   nextLevelAnswer: z.string().min(1),
+  coaching: coachingFieldSchema,
 });
 const turnSchema = z.object({
   question: z.string().min(1).max(500),
@@ -165,7 +167,10 @@ export function createInterviewUseCases(ai: AiGateway) {
         signal,
       );
       const assessment = turnAssessmentSchema.parse(result.value);
-      return { ...result, value: calculateTurnEvaluation(assessment) };
+      return {
+        ...result,
+        value: calculateTurnEvaluation(assessment, answer),
+      };
     },
   };
 }
