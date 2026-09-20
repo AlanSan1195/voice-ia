@@ -1,6 +1,6 @@
 # Mejora educativa del feedback de Vera
 
-> **Estado:** pasos 1 y 2 implementados; pasos 3–5 pendientes. La tarjeta visual todavía no cambia. Basado en el proyecto en el commit `d41aa1b` (19 de septiembre de 2026).
+> **Estado:** pasos 1, 2 y 3 implementados; pasos 4–5 pendientes. La tarjeta visual ya prioriza el coaching accionable y mantiene las métricas como apoyo. Basado en el proyecto en el commit `d41aa1b` (19 de septiembre de 2026).
 
 Vera ya ayuda a practicar entrevistas técnicas en inglés. La siguiente mejora debe lograr que, después de cada respuesta, la persona sepa **qué hizo bien, qué cambiaría y cómo practicarlo**. El feedback seguirá siendo honesto y específico para el puesto y el nivel de inglés, sin convertir la entrevista de tres preguntas en un examen más largo.
 
@@ -8,7 +8,7 @@ Vera ya ayuda a practicar entrevistas técnicas en inglés. La siguiente mejora 
 
 1. **Completado:** fijar la regla pedagógica y los ejemplos de referencia (paso 1).
 2. **Completado:** enriquecer el feedback que ya genera la IA, sin llamadas adicionales (paso 2).
-3. Mostrar una comparación útil y un mini-reto opcional por respuesta (paso 3).
+3. **Completado:** mostrar una comparación útil y un mini-reto opcional por respuesta (paso 3).
 4. Cerrar la sesión con una prioridad de práctica respaldada por los turnos (paso 4).
 5. Validar calidad, accesibilidad y compatibilidad antes de considerar nuevas funciones (paso 5).
 
@@ -150,11 +150,11 @@ Actualizar la migración del historial para conservar `coaching` válido en sesi
 
 **Resultado visible:** `TurnEvaluationCard` abre con «Lo que funcionó» y «Qué cambiaría». Presenta original y corrección con etiquetas explícitas y resaltado de diferencias verificadas; las métricas quedan en un nivel secundario. La persona puede hacer o saltar el mini-reto antes de continuar.
 
-**Trabajo:** usar texto de React y elementos semánticos como `<del>` y `<ins>` para el cambio, nunca HTML generado por el modelo. La comparación debe seguir siendo comprensible sin color, con teclado y lector de pantalla. Si falta `coaching`, conservar una presentación clara de los campos existentes. El mini-reto puede abrir una caja de texto local y cerrarse sin afectar la respuesta evaluada, las puntuaciones o la siguiente pregunta. Mantener la identidad visual actual y respetar movimiento reducido.
+**Trabajo:** usar texto de React y elementos semánticos como `<del>` y `<ins>` para el cambio, nunca HTML generado por el modelo. La comparación debe seguir siendo comprensible sin color, con teclado y lector de pantalla. Si falta `coaching`, conservar una presentación clara de los campos existentes. El mini-reto puede abrir una caja de texto local y cerrarse sin afectar la respuesta evaluada, las puntuaciones o la siguiente pregunta; la tarjeta aparece antes de los controles «Edit answer» y «Next question», que siguen disponibles para saltarla. Mantener la identidad visual actual y respetar movimiento reducido.
 
 **Depende de:** paso 2.
 
-**Terminado cuando:** el usuario puede señalar el cambio concreto y explicar por qué importa, o continuar sin practicar. La tarjeta funciona con texto corto/largo, en móvil y con teclado; no se guarda ni califica el intento. **Verificación:** `pnpm --filter @voice-ia/web typecheck` y revisión manual de los estados con/sin coaching.
+**Terminado cuando:** el usuario puede señalar el cambio concreto y explicar por qué importa, o continuar sin practicar. La tarjeta funciona con texto corto/largo, en móvil y con teclado; no se guarda ni califica el intento. **Estado actual: completado.** **Verificación:** `pnpm --filter @voice-ia/web typecheck` y `pnpm --filter @voice-ia/web build` terminan sin errores; se revisaron los estados con y sin coaching, el mini-reto plegado/abierto y el orden móvil de contenido.
 
 ### Paso 4 — Dar un siguiente paso útil al cerrar la sesión
 
@@ -197,9 +197,10 @@ Presentarlo como «patrón» solo si está respaldado por al menos dos turnos; c
 
 ## Comprobación de este documento
 
-- [ ] Cada paso declara resultado visible, dependencia, criterio de finalización y verificación.
+- [x] Cada paso declara resultado visible, dependencia, criterio de finalización y verificación.
 - [x] Paso 1 incluye la pauta pedagógica v1 y los casos A1/A2, B1 y B2.
 - [x] Paso 2 añade coaching opcional, sanitiza citas y conserva sesiones antiguas.
-- [ ] El ejemplo muestra una corrección concreta y evita inventar evidencia.
-- [ ] El plan conserva el flujo de tres preguntas, el historial local y las puntuaciones deterministas.
-- [ ] `pnpm exec prettier --check MEJORAEDUCATIVA.md` termina sin errores.
+- [x] Paso 3 prioriza fortalezas y cambios, compara original/corrección y ofrece práctica opcional sin calificación.
+- [x] El ejemplo muestra una corrección concreta y evita inventar evidencia.
+- [x] El plan conserva el flujo de tres preguntas, el historial local y las puntuaciones deterministas.
+- [x] `pnpm exec prettier --check MEJORAEDUCATIVA.md` termina sin errores.

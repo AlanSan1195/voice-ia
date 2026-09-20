@@ -129,6 +129,12 @@ export function InterviewStage({
             placeholder="Your transcribed answer will appear here. You can edit it before submitting..."
             disabled={busy || Boolean(turnEvaluation)}
           />
+          {turnEvaluation && (
+            <TurnEvaluationCard
+              evaluation={turnEvaluation}
+              englishLevel={englishLevel}
+            />
+          )}
           <div className="mt-3 flex items-center justify-between gap-3 max-[560px]:flex-col-reverse max-[560px]:items-end">
             <button
               className={`grid size-[62px] place-items-center rounded-full border-0 text-[#0b0e12] shadow-[0_0_0_10px_rgb(198_242_107_/_6%),0_12px_32px_rgb(198_242_107_/_20%)] ${listening ? "bg-[#e56f62] text-white shadow-[0_0_0_10px_rgb(229_111_98_/_8%),0_12px_32px_rgb(229_111_98_/_20%)]" : "bg-accent"}`}
@@ -177,12 +183,6 @@ export function InterviewStage({
               </>
             )}
           </div>
-          {turnEvaluation && (
-            <TurnEvaluationCard
-              evaluation={turnEvaluation}
-              englishLevel={englishLevel}
-            />
-          )}
           {error && <p className={ui.error}>{error}</p>}
         </div>
       </div>
