@@ -3,10 +3,71 @@ import { motion } from "motion/react";
 import type {
   EnglishLevel,
   Feedback,
+  NextPractice,
   Profile,
   Turn,
 } from "./InterviewApp.types";
 import { ui } from "./uiClasses";
+
+const practiceSkillLabels: Record<NextPractice["skill"], string> = {
+  english: "Inglés preciso",
+  technical: "Contenido técnico",
+  relevance: "Relevancia para la pregunta",
+  structure: "Estructura de la respuesta",
+};
+
+function NextPracticeCard({
+  practice,
+  turns,
+}: {
+  practice: NextPractice;
+  turns: Turn[];
+}) {
+  const references = practice.turnIndices.filter((index) => turns[index]);
+  const isPattern = references.length >= 2;
+
+  return (
+    <section
+      className="mt-6 rounded-[18px] border border-[rgb(198_242_107_/_38%)] bg-[rgb(198_242_107_/_9%)] p-5"
+      aria-labelledby="next-practice-title"
+    >
+      <div className="text-[0.7rem] font-bold uppercase tracking-[0.14em] text-accent">
+        {isPattern ? "Patrón observado" : "Prioridad de práctica"}
+      </div>
+      <h3
+        id="next-practice-title"
+        className="mt-2 text-[1.15rem] font-bold tracking-[-0.02em] text-ink"
+      >
+        {practiceSkillLabels[practice.skill]}
+      </h3>
+      <p className="mt-2 max-w-[720px] text-[0.92rem] leading-[1.6] text-ink">
+        {practice.observation}
+      </p>
+      {references.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.78rem] text-muted">
+          <span>Basado en:</span>
+          {references.map((index) => (
+            <a
+              className="rounded-full border border-line bg-white/[0.06] px-2.5 py-1 font-semibold text-accent-2 underline decoration-transparent underline-offset-2 transition hover:decoration-current focus:outline-none focus:ring-2 focus:ring-[rgb(198_242_107_/_60%)] motion-reduce:transition-none"
+              href={`#turn-review-${index}`}
+              key={index}
+            >
+              Turno {index + 1}
+            </a>
+          ))}
+        </div>
+      )}
+      <div className="mt-4 grid gap-3 min-[650px]:grid-cols-2">
+        <p className="m-0 rounded-[14px] bg-white/[0.06] p-3 text-[0.86rem] leading-[1.55] text-ink">
+          <strong>Qué hacer:</strong> {practice.action}
+        </p>
+        <p className="m-0 rounded-[14px] bg-white/[0.06] p-3 text-[0.86rem] leading-[1.55] text-ink">
+          <strong>Reto de 30 segundos:</strong> {practice.miniChallenge}
+        </p>
+      </div>
+    </section>
+  );
+}
 
 type ResultsStageProps = {
   profile: Profile;
@@ -84,6 +145,9 @@ export function ResultsStage({
             </strong>
           </div>
         </div>
+        {feedback.nextPractice && (
+          <NextPracticeCard practice={feedback.nextPractice} turns={turns} />
+        )}
         <div className="mt-6 grid grid-cols-2 gap-3 max-[560px]:grid-cols-1">
           <div className="rounded-[17px] border border-[rgb(198_242_107_/_38%)] bg-[rgb(198_242_107_/_9%)] p-4">
             <span className="block text-[0.72rem] text-muted">
@@ -180,6 +244,7 @@ export function ResultsStage({
           return (
             <div
               className="border-t border-line py-[18px]"
+              id={`turn-review-${index}`}
               key={`${turn.question}-${index}`}
             >
               <h3 className="mb-2 text-base font-bold">

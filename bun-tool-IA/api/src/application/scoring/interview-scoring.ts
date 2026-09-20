@@ -4,6 +4,7 @@ import type {
   FeedbackItem,
   InterviewCoaching,
   InterviewFeedback,
+  InterviewNextPractice,
   InterviewTurn,
   InterviewTurnEvaluation,
 } from "../../domain/interview";
@@ -152,6 +153,123 @@ function observedLevel(evaluations: InterviewTurnEvaluation[]): EnglishLevel {
   return order[medianIndex] ?? "B1";
 }
 
+const practiceContent: Record<
+  InterviewNextPractice["skill"],
+  { label: string; action: string; miniChallenge: string }
+> = {
+  english: {
+    label: "inglés preciso",
+    action:
+      "Reformula una frase de cada respuesta con un verbo preciso y una idea por oración.",
+    miniChallenge:
+      "Elige una respuesta y repítela en 30 segundos usando dos verbos precisos.",
+  },
+  technical: {
+    label: "contenido técnico",
+    action:
+      "Explica la decisión técnica y añade una consecuencia concreta que puedas respaldar.",
+    miniChallenge:
+      "Resume una decisión técnica en 30 segundos: problema, decisión y efecto conocido.",
+  },
+  relevance: {
+    label: "relevancia para la pregunta",
+    action:
+      "Responde primero a lo que pregunta la persona entrevistadora y elimina detalles que no ayuden.",
+    miniChallenge:
+      "Responde una pregunta en 30 segundos empezando por la idea principal y un solo ejemplo.",
+  },
+  structure: {
+    label: "estructura de la respuesta",
+    action:
+      "Ordena la respuesta con contexto breve, acción y un resultado que realmente conozcas.",
+    miniChallenge:
+      "Ensaya una respuesta en 30 segundos con contexto, acción y resultado comprobable.",
+  },
+};
+
+const practiceDimensions: Array<{
+  skill: InterviewNextPractice["skill"];
+  score: (evaluation: InterviewTurnEvaluation) => number;
+}> = [
+  { skill: "english", score: (evaluation) => evaluation.englishScore },
+  { skill: "technical", score: (evaluation) => evaluation.technicalScore },
+  { skill: "relevance", score: (evaluation) => evaluation.relevanceScore },
+  { skill: "structure", score: (evaluation) => evaluation.structureScore },
+];
+
+function buildNextPractice(
+  turns: InterviewTurn[],
+): InterviewNextPractice | undefined {
+  const evaluations = turns
+    .map((turn) => turn.evaluation)
+    .filter((item): item is InterviewTurnEvaluation => Boolean(item))
+    .slice(0, 3);
+  if (!evaluations.length) return undefined;
+
+  const coachingIndices = new Map<InterviewNextPractice["skill"], number[]>();
+  evaluations.forEach((evaluation, index) => {
+    const skills: InterviewNextPractice["skill"][] = [];
+    if (evaluation.coaching?.language) skills.push("english");
+    if (evaluation.coaching?.interview.skill)
+      skills.push(evaluation.coaching.interview.skill);
+    skills.forEach((skill) => {
+      const indices = coachingIndices.get(skill) ?? [];
+      if (!indices.includes(index)) indices.push(index);
+      coachingIndices.set(skill, indices);
+    });
+  });
+
+  const repeatedCoaching = [...coachingIndices.entries()]
+    .filter(([, indices]) => indices.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length)[0];
+  if (repeatedCoaching) {
+    const [skill, turnIndices] = repeatedCoaching;
+    const content = practiceContent[skill];
+    return {
+      skill,
+      observation: `El foco de coaching se repitió en los turnos ${turnIndices.map((index) => index + 1).join(" y ")}: ${content.label}.`,
+      turnIndices,
+      action: content.action,
+      miniChallenge: content.miniChallenge,
+    };
+  }
+
+  const dimensions = practiceDimensions.map(({ skill, score }) => {
+    const scores = evaluations.map(score);
+    return {
+      skill,
+      scores,
+      average: average(scores),
+    };
+  });
+  const weakest = dimensions.reduce((current, candidate) =>
+    candidate.average < current.average ? candidate : current,
+  );
+  const weakestIndex = weakest.scores.reduce(
+    (currentIndex, score, index, scores) =>
+      score < (scores[currentIndex] ?? Number.POSITIVE_INFINITY)
+        ? index
+        : currentIndex,
+    0,
+  );
+  const repeatedWeakness = weakest.scores
+    .map((score, index) => (score <= 6 ? index : -1))
+    .filter((index) => index >= 0);
+  const turnIndices =
+    repeatedWeakness.length >= 2 ? repeatedWeakness : [weakestIndex];
+  const content = practiceContent[weakest.skill];
+  return {
+    skill: weakest.skill,
+    observation:
+      turnIndices.length >= 2
+        ? `La dimensión con menor promedio fue ${content.label} (${weakest.average}/10) en los turnos ${turnIndices.map((index) => index + 1).join(" y ")}.`
+        : `La dimensión con menor promedio fue ${content.label} (${weakest.average}/10); el turno ${weakestIndex + 1} fue el más bajo en esta dimensión.`,
+    turnIndices,
+    action: content.action,
+    miniChallenge: content.miniChallenge,
+  };
+}
+
 export function buildInterviewFeedback(
   turns: InterviewTurn[],
   narrative: FeedbackNarrative,
@@ -181,6 +299,7 @@ export function buildInterviewFeedback(
     strengths: narrative.strengths as FeedbackItem[],
     gaps: narrative.gaps as FeedbackItem[],
     recommendations: narrative.recommendations as FeedbackItem[],
+    nextPractice: buildNextPractice(turns),
     turnReviews: evaluations.map((item, turnIndex) => ({
       turnIndex,
       levelScore: item.levelScore,

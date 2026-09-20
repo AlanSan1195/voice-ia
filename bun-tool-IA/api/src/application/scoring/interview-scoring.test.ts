@@ -138,5 +138,42 @@ describe("interview scoring", () => {
     expect(feedback.jobReadinessScore).toBe(7.7);
     expect(feedback.dimensionAverages.technical).toBe(8);
     expect(feedback.turnReviews[0]?.levelScore).toBe(first.levelScore);
+    expect(feedback.nextPractice?.skill).toBe("english");
+    expect(feedback.nextPractice?.turnIndices).toEqual([1]);
+  });
+
+  test("turns repeated coaching into a practice pattern with evidence", () => {
+    const coached = (skill: "technical" | "relevance" | "structure") =>
+      calculateTurnEvaluation(
+        {
+          ...assessment,
+          coaching: {
+            interview: {
+              skill,
+              evidence: "the API",
+              technique: "Acción + evidencia",
+              action: "Explica la decisión.",
+              miniChallenge: "Reescribe la respuesta.",
+            },
+          },
+        },
+        "I improved the API.",
+      );
+    const feedback = buildInterviewFeedback(
+      [
+        { question: "Q1", answer: "A1", evaluation: coached("structure") },
+        { question: "Q2", answer: "A2", evaluation: coached("structure") },
+        { question: "Q3", answer: "A3", evaluation: coached("technical") },
+      ],
+      narrative,
+    );
+
+    expect(feedback.nextPractice).toMatchObject({
+      skill: "structure",
+      turnIndices: [0, 1],
+      action:
+        "Ordena la respuesta con contexto breve, acción y un resultado que realmente conozcas.",
+    });
+    expect(feedback.nextPractice?.observation).toContain("turnos 1 y 2");
   });
 });

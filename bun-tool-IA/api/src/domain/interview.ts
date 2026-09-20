@@ -49,6 +49,13 @@ export type InterviewContext = {
 };
 export type QuestionResult = { index: number; text: string };
 export type FeedbackItem = { label: string; description: string };
+export type InterviewNextPractice = {
+  skill: "english" | "technical" | "relevance" | "structure";
+  observation: string;
+  turnIndices: number[];
+  action: string;
+  miniChallenge: string;
+};
 export type InterviewFeedback = {
   overallScore: number;
   levelScore: number;
@@ -64,6 +71,7 @@ export type InterviewFeedback = {
   strengths: FeedbackItem[];
   gaps: FeedbackItem[];
   recommendations: FeedbackItem[];
+  nextPractice?: InterviewNextPractice;
   turnReviews: Array<{
     turnIndex: number;
     levelScore: number;

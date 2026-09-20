@@ -1,6 +1,6 @@
 # Mejora educativa del feedback de Vera
 
-> **Estado:** pasos 1, 2 y 3 implementados; pasos 4–5 pendientes. La tarjeta visual ya prioriza el coaching accionable y mantiene las métricas como apoyo. Basado en el proyecto en el commit `d41aa1b` (19 de septiembre de 2026).
+> **Estado:** pasos 1–4 implementados; paso 5 pendiente. El flujo ya ofrece coaching por turno y una prioridad de práctica final respaldada por los turnos. Basado en el proyecto en el commit `d41aa1b` (19 de septiembre de 2026).
 
 Vera ya ayuda a practicar entrevistas técnicas en inglés. La siguiente mejora debe lograr que, después de cada respuesta, la persona sepa **qué hizo bien, qué cambiaría y cómo practicarlo**. El feedback seguirá siendo honesto y específico para el puesto y el nivel de inglés, sin convertir la entrevista de tres preguntas en un examen más largo.
 
@@ -9,7 +9,7 @@ Vera ya ayuda a practicar entrevistas técnicas en inglés. La siguiente mejora 
 1. **Completado:** fijar la regla pedagógica y los ejemplos de referencia (paso 1).
 2. **Completado:** enriquecer el feedback que ya genera la IA, sin llamadas adicionales (paso 2).
 3. **Completado:** mostrar una comparación útil y un mini-reto opcional por respuesta (paso 3).
-4. Cerrar la sesión con una prioridad de práctica respaldada por los turnos (paso 4).
+4. **Completado:** cerrar la sesión con una prioridad de práctica respaldada por los turnos (paso 4).
 5. Validar calidad, accesibilidad y compatibilidad antes de considerar nuevas funciones (paso 5).
 
 ## Punto de partida
@@ -160,7 +160,7 @@ Actualizar la migración del historial para conservar `coaching` válido en sesi
 
 **Resultado visible:** `ResultsStage` resume una prioridad de práctica, muestra a qué turno(s) se refiere y propone una acción breve para la próxima entrevista. Las recomendaciones y la revisión por turno siguen accesibles.
 
-**Trabajo:** aprovechar la llamada final de feedback para devolver opcionalmente `nextPractice`:
+**Trabajo:** aprovechar la llamada final de feedback para devolver opcionalmente `nextPractice`, calculado a partir de las evaluaciones ya guardadas para no añadir otra llamada de IA:
 
 ```ts
 nextPractice?: {
@@ -176,7 +176,7 @@ Presentarlo como «patrón» solo si está respaldado por al menos dos turnos; c
 
 **Depende de:** pasos 2 y 3.
 
-**Terminado cuando:** el cierre ofrece una acción específica sin repetir tres bloques genéricos; las referencias apuntan a turnos reales y las sesiones antiguas se muestran correctamente. **Verificación:** `pnpm --filter @voice-ia/api test`, `pnpm exec bun test apps/web/src/components/InterviewApp.history.test.ts` y `pnpm --filter @voice-ia/web typecheck` terminan sin errores.
+**Terminado cuando:** el cierre ofrece una acción específica sin repetir tres bloques genéricos; las referencias apuntan a turnos reales y las sesiones antiguas se muestran correctamente. **Estado actual: completado.** **Verificación:** `pnpm --filter @voice-ia/api test`, `pnpm --filter @voice-ia/api typecheck`, `pnpm exec bun test apps/web/src/components/InterviewApp.history.test.ts`, `pnpm --filter @voice-ia/web typecheck` y `pnpm --filter @voice-ia/web build` terminan sin errores.
 
 ### Paso 5 — Probar la utilidad antes de ampliar el producto
 
@@ -201,6 +201,7 @@ Presentarlo como «patrón» solo si está respaldado por al menos dos turnos; c
 - [x] Paso 1 incluye la pauta pedagógica v1 y los casos A1/A2, B1 y B2.
 - [x] Paso 2 añade coaching opcional, sanitiza citas y conserva sesiones antiguas.
 - [x] Paso 3 prioriza fortalezas y cambios, compara original/corrección y ofrece práctica opcional sin calificación.
+- [x] Paso 4 sintetiza una prioridad o patrón de práctica, enlaza turnos de evidencia y conserva recomendaciones anteriores.
 - [x] El ejemplo muestra una corrección concreta y evita inventar evidencia.
 - [x] El plan conserva el flujo de tres preguntas, el historial local y las puntuaciones deterministas.
 - [x] `pnpm exec prettier --check MEJORAEDUCATIVA.md` termina sin errores.

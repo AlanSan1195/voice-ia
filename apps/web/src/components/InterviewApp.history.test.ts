@@ -137,3 +137,52 @@ test("keeps valid coaching and removes only invalid quote fields", () => {
     "the rest of coaching survives invalid evidence",
   );
 });
+
+test("keeps a valid next-practice block and bounds old references", () => {
+  const [session] = parseHistory(
+    JSON.stringify([
+      {
+        ...baseSession,
+        feedback: {
+          overallScore: 70,
+          levelScore: 7,
+          jobReadinessScore: 7,
+          englishLevel: "B1",
+          dimensionAverages: {
+            english: 7,
+            technical: 7,
+            relevance: 7,
+            structure: 7,
+          },
+          summary: "Buen progreso.",
+          strengths: [],
+          gaps: [],
+          recommendations: [],
+          nextPractice: {
+            skill: "structure",
+            observation: "Se repitió en dos turnos.",
+            turnIndices: [0, 0, 2, 3, -1],
+            action: "Ordena la respuesta.",
+            miniChallenge: "Responde en 30 segundos.",
+          },
+          turnReviews: [],
+        },
+        turns: [
+          {
+            question: "How did you improve the API?",
+            answer: "I made the API faster.",
+            evaluation: baseEvaluation,
+          },
+        ],
+      },
+    ]),
+  );
+  assert(
+    session?.feedback?.nextPractice?.skill === "structure",
+    "valid next-practice skill is kept",
+  );
+  assert(
+    JSON.stringify(session?.feedback?.nextPractice?.turnIndices) === "[0]",
+    "references are deduplicated and bounded to available turns",
+  );
+});

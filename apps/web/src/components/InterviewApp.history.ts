@@ -2,6 +2,7 @@ import type {
   EnglishLevel,
   Feedback,
   InterviewCoaching,
+  NextPractice,
   ProgressDimension,
   ProgressSummary,
   Session,
@@ -167,6 +168,7 @@ function migrateTurn(value: unknown, level: EnglishLevel): Turn | undefined {
 function migrateFeedback(
   value: unknown,
   level: EnglishLevel,
+  turnCount: number,
 ): Feedback | undefined {
   if (!isRecord(value)) return undefined;
   const levelScore = normalizeScore(value.levelScore ?? value.overallScore);
@@ -214,6 +216,7 @@ function migrateFeedback(
       },
     ];
   });
+  const nextPractice = migrateNextPractice(value.nextPractice, turnCount);
 
   return {
     overallScore: normalizeScore(value.overallScore, levelScore),
@@ -227,7 +230,47 @@ function migrateFeedback(
     strengths: mapFeedbackItems(value.strengths),
     gaps: mapFeedbackItems(value.gaps),
     recommendations: mapFeedbackItems(value.recommendations),
+    ...(nextPractice ? { nextPractice } : {}),
     turnReviews,
+  };
+}
+
+function migrateNextPractice(
+  value: unknown,
+  turnCount: number,
+): NextPractice | undefined {
+  if (!isRecord(value)) return undefined;
+  const skill = value.skill;
+  if (
+    skill !== "english" &&
+    skill !== "technical" &&
+    skill !== "relevance" &&
+    skill !== "structure"
+  )
+    return undefined;
+  const observation = stringValue(value.observation);
+  const action = stringValue(value.action);
+  const miniChallenge = stringValue(value.miniChallenge);
+  const maxIndex = Math.min(2, turnCount - 1);
+  const turnIndices = Array.from(
+    new Set(
+      arrayValue(value.turnIndices).filter(
+        (index): index is number =>
+          typeof index === "number" &&
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index <= maxIndex,
+      ),
+    ),
+  );
+  if (!observation || !action || !miniChallenge || !turnIndices.length)
+    return undefined;
+  return {
+    skill,
+    observation,
+    turnIndices,
+    action,
+    miniChallenge,
   };
 }
 
@@ -256,7 +299,7 @@ export function migrateSession(value: unknown): Session {
     englishLevel: level,
   };
   if (!session.id || !session.createdAt) throw new Error("Invalid session id");
-  const feedback = migrateFeedback(value.feedback, level);
+  const feedback = migrateFeedback(value.feedback, level, turns.length);
   return feedback ? { ...session, feedback } : session;
 }
 

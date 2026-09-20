@@ -43,6 +43,14 @@ export type Turn = {
 
 export type Profile = { role: string; summary: string; focusAreas: string[] };
 
+export type NextPractice = {
+  skill: "english" | "technical" | "relevance" | "structure";
+  observation: string;
+  turnIndices: number[];
+  action: string;
+  miniChallenge: string;
+};
+
 export type Feedback = {
   overallScore: number;
   levelScore: number;
@@ -58,6 +66,7 @@ export type Feedback = {
   strengths: { label: string; description: string }[];
   gaps: { label: string; description: string }[];
   recommendations: { label: string; description: string }[];
+  nextPractice?: NextPractice;
   turnReviews: {
     turnIndex: number;
     levelScore: number;
