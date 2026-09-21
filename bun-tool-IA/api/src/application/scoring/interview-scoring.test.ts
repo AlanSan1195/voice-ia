@@ -118,6 +118,24 @@ describe("interview scoring", () => {
     expect(calculateTurnEvaluation(parsed).technicalScore).toBe(7);
   });
 
+  ("A1 A2 B1 B2".split(" ") as Array<"A1" | "A2" | "B1" | "B2">).forEach(
+    (level) => {
+      test(`keeps the observed level contract for ${level}`, () => {
+        const result = calculateTurnEvaluation({
+          ...assessment,
+          observedEnglishLevel: level,
+        });
+        expect(result.observedEnglishLevel).toBe(level);
+      });
+    },
+  );
+
+  test("rejects incomplete final feedback instead of inventing a summary", () => {
+    expect(() =>
+      buildInterviewFeedback([{ question: "Q1", answer: "A1" }], narrative),
+    ).toThrow("Todas las respuestas deben estar evaluadas");
+  });
+
   test("uses saved turn evaluations for final averages", () => {
     const first = calculateTurnEvaluation(assessment);
     const second = calculateTurnEvaluation({

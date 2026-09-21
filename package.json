@@ -10,7 +10,8 @@
     "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors cyan,magenta \"pnpm --filter @voice-ia/api dev\" \"pnpm --filter @voice-ia/web dev\"",
     "build": "pnpm --filter @voice-ia/web build",
     "typecheck": "pnpm --filter @voice-ia/api typecheck && pnpm --filter @voice-ia/web typecheck",
-    "test": "pnpm --filter @voice-ia/api test",
+    "test": "pnpm --filter @voice-ia/api test && pnpm run test:web",
+    "test:web": "pnpm exec bun test apps/web/src/components/InterviewApp.history.test.ts",
     "lint": "pnpm --filter @voice-ia/api exec tsc --noEmit && pnpm --filter @voice-ia/web exec tsc --noEmit",
     "format:check": "pnpm exec prettier --check .",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"

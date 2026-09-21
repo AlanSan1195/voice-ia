@@ -182,11 +182,19 @@ Presentarlo como «patrón» solo si está respaldado por al menos dos turnos; c
 
 **Resultado visible:** una entrega validada del flujo completo, con incidencias pedagógicas y de interfaz corregidas antes de proponer seguimiento de habilidades entre sesiones.
 
-**Trabajo:** recorrer una entrevista completa para A1/A2, B1 y B2; incluir un turno sin corrección, uno con salida parcial de IA y una sesión antigua. Añadir pruebas de historial y de la selección/resaltado de fragmentos como funciones puras, incorporándolas al comando `pnpm verify` (hoy solo ejecuta las pruebas de la API). Revisar escritorio y móvil, teclado, lector de pantalla, esperas y errores de red. Comprobar con personas de prueba que pueden responder «¿qué cambiarías en tu próxima respuesta?» después de ver la tarjeta, sin tener que interpretar la puntuación. Registrar resultados manualmente; no añadir telemetría ni cuentas en esta fase.
+**Trabajo:** recorrer una entrevista completa para A1/A2, B1 y B2; incluir un turno sin corrección, uno con salida parcial de IA y una sesión antigua. Añadir pruebas de historial y de la selección/resaltado de fragmentos como funciones puras, incorporándolas al comando `pnpm verify` mediante el script raíz `pnpm test` (API + compatibilidad web). Revisar escritorio y móvil, teclado, lector de pantalla, esperas y errores de red. Comprobar con personas de prueba que pueden responder «¿qué cambiarías en tu próxima respuesta?» después de ver la tarjeta, sin tener que interpretar la puntuación. Registrar resultados manualmente; no añadir telemetría ni cuentas en esta fase.
 
 **Depende de:** pasos 1–4.
 
-**Terminado cuando:** ninguna caída del coaching bloquea la entrevista, el historial anterior sigue legible, los cambios se distinguen sin color y el siguiente paso resulta comprensible en la revisión de uso. **Verificación:** `pnpm verify` termina sin errores y la lista manual de escenarios queda revisada.
+**Terminado cuando:** ninguna caída del coaching bloquea la entrevista, el historial anterior sigue legible, los cambios se distinguen sin color y el siguiente paso resulta comprensible en la revisión de uso. **Estado actual:** las pruebas automatizadas y la revisión de accesibilidad del flujo activo están completadas; el cierre de la puerta queda pendiente porque `pnpm verify` se detiene en dos avisos de formato preexistentes (`decision/REFACTOR.md` y `README.md`) antes de ejecutar sus fases posteriores. **Verificación:** `pnpm test`, `pnpm typecheck`, `pnpm build`, la revisión AX/teclado del flujo activo y Prettier sobre los archivos del cambio terminan sin errores; `pnpm verify` queda documentado como bloqueado por esos dos archivos ajenos al cambio.
+
+#### Registro de validación del paso 5
+
+- **Niveles:** las pruebas de contrato recorren A1, A2, B1 y B2; el prompt conserva la guía CEFR correspondiente.
+- **Salidas incompletas:** el coaching malformado se descarta sin perder puntuaciones; un cierre sin turnos evaluados falla de forma explícita en lugar de inventar un resumen; el fallback de proveedores conserva el flujo.
+- **Historial:** las sesiones antiguas siguen legibles y `nextPractice.turnIndices` se deduplica y limita a turnos existentes.
+- **Interfaz:** el flujo activo expone por lector de pantalla los encabezados, etiquetas del mini-reto y botones; al navegar con Tab desde el textarea se llega a «Edit answer» con foco visible. Las rejillas `max-[560px]`/`min-[650px]`, el salto sin práctica y `motion-reduce` cubren la composición móvil y el movimiento reducido.
+- **Puerta:** `pnpm test` ejecuta API y compatibilidad web; `pnpm typecheck`, `pnpm build`, Prettier de los archivos del cambio y `git diff --check` pasan. La verificación global requiere corregir primero el formato preexistente de `decision/REFACTOR.md` y `README.md`.
 
 ## Límites y decisiones para la ejecución
 
@@ -202,6 +210,8 @@ Presentarlo como «patrón» solo si está respaldado por al menos dos turnos; c
 - [x] Paso 2 añade coaching opcional, sanitiza citas y conserva sesiones antiguas.
 - [x] Paso 3 prioriza fortalezas y cambios, compara original/corrección y ofrece práctica opcional sin calificación.
 - [x] Paso 4 sintetiza una prioridad o patrón de práctica, enlaza turnos de evidencia y conserva recomendaciones anteriores.
+- [x] Paso 5 añade cobertura A1/A2/B1/B2, salidas incompletas, historial antiguo y pruebas web al comando `pnpm test`.
 - [x] El ejemplo muestra una corrección concreta y evita inventar evidencia.
 - [x] El plan conserva el flujo de tres preguntas, el historial local y las puntuaciones deterministas.
 - [x] `pnpm exec prettier --check MEJORAEDUCATIVA.md` termina sin errores.
+- [ ] `pnpm verify` termina sin errores; actualmente queda bloqueado por el formato preexistente de `decision/REFACTOR.md` y `README.md`.
